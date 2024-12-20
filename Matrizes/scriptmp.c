@@ -3,10 +3,10 @@
 #include <omp.h>
 #include <time.h>
 
-// gcc scriptmp.c -o testemp -fopenmp
+// gcc -DDEBUG scriptmp.c -o testemp -fopenmp
 
 int main() {
-    int N = 1000;
+    int N = 3000;
     int **A, **B, **C;
 
     // Alocação dinâmica das matrizes (mesmo que no código sequencial)
