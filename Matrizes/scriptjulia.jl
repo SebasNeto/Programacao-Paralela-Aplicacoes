@@ -43,3 +43,23 @@ step = 1000        # Incremento do tamanho
 
 test_matrix_sizes(start_size, end_size, step)
 
+using Base.Threads
+using LinearAlgebra
+
+function multiplicacaoMatriz(n::Int)
+    a = fill(1.0, n, n)
+    b = fill(2.0, n, n)
+    c = zeros(n, n)
+
+    start_time = time()
+    Threads.@threads for i in 1:n
+        for j in 1:n
+            c[i, j] = sum(a[i, :] .* b[:, j])
+        end
+    end
+    end_time = time()
+
+    elapsed_time = end_time - start_time
+    println("Tamanho da matriz: $n x $n, Tempo de execução: $elapsed_time segundos")
+    return elapsed_time
+end

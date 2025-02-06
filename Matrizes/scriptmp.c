@@ -10,7 +10,7 @@ int main() {
     int **A, **B, **C;
 
     // Alocação dinâmica das matrizes (mesmo que no código sequencial)
-    // [Alocação e inicialização das matrizes A, B e C aqui]
+    // [Alocação e inicialização das matrizes A, B e C ]
 
     A = (int **)malloc(N * sizeof(int *));
     B = (int **)malloc(N * sizeof(int *));

@@ -1,1 +1,0 @@
-/mnt/c/Users/Cliente/OneDrive/Documentos/PIBIC\ 2024\ -\ 2025/Programacao-Paralela-Aplicacoes/Matrizes/mul_matrizes/target/debug/mul_matrizes: /mnt/c/Users/Cliente/OneDrive/Documentos/PIBIC\ 2024\ -\ 2025/Programacao-Paralela-Aplicacoes/Matrizes/mul_matrizes/src/main.rs
