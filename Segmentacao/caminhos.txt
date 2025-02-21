@@ -1,1 +1,18 @@
-g++ -o teste nome_do_arquivo.cpp `pkg-config --cflags --libs opencv4`
+g++ -o teste otsu.cpp `pkg-config --cflags --libs opencv4`
+g++ -std=c++17 -pthread -o testecomthreads otsu_thread.cpp `pkg-config --cflags --libs opencv4`
+
+
+para halide
+
+export LD_LIBRARY_PATH=/mnt/c/Users/Cliente/Downloads/Halide/lib:$LD_LIBRARY_PATH
+
+g++ -std=c++17 -O3 -I"/mnt/c/Users/Cliente/Downloads/Halide/include" -I"/mnt/c/Users/Cliente/Downloads/Halide/share/Halide/tools" otsu_halide.cpp -L"/mnt/c/Users/Cliente/Downloads/Halide/lib" -lpthread -ldl -lpng -lz -ljpeg -lHalide -o testeHalide
+
+ou 
+
+g++ -std=c++17 -O3 -I"/mnt/c/Users/Cliente/Downloads/Halide/include" -I"/mnt/c/Users/Cliente/Downloads/Halide/share/Halide/tools" otsu_halide.cpp -L"/mnt/c/Users/Cliente/Downloads/Halide/lib" -Wl,-rpath,/mnt/c/Users/Cliente/Downloads/Halide/lib -lpthread -ldl -lpng -lz -ljpeg -lHalide -o testeHalide
+
+
+////////
+
+g++ -std=c++17 -O3 -I"/mnt/c/Users/Cliente/Downloads/Halide/include" -I"/mnt/c/Users/Cliente/Downloads/Halide/share/Halide/tools" otsu_halide.cpp -L"/mnt/c/Users/Cliente/Downloads/Halide/lib" -lpthread -ldl -lpng -lz -ljpeg -lHalide -o testeHalide

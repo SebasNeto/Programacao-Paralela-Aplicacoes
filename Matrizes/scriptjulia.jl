@@ -1,65 +1,50 @@
 using Distributed
-using LinearAlgebra  # Para multiplicação de matrizes
-
-function parallel_matrix_multiplication(n::Int)
-    # Inicializando as matrizes
-    a = fill(1.0, n, n)
-    b = fill(2.0, n, n)
-
-    start_time = time()
-    c = a * b  # Multiplicação de matrizes
-    end_time = time()
-
-    # Calculando o tempo decorrido
-    elapsed_time = end_time - start_time
-    println("Tamanho da matriz: $n x $n, Tempo de execução: $elapsed_time segundos")
-
-    # Retorno do tempo para salvar no arquivo
-    return elapsed_time
-end
-
-# Intervalo de tamanhos de matrizes para teste
-function test_matrix_sizes(start_size::Int, end_size::Int, step::Int)
-    # Abrindo arquivo para escrita
-    open("resultados.csv", "w") do file
-        # Escrevendo cabeçalho
-        println(file, "Tamanho,Tempo (segundos)")
-        
-        # Loop para testar diferentes tamanhos de matrizes
-        for n in start_size:step:end_size
-            println("\nIniciando a multiplicação de matrizes de tamanho $n x $n...")
-            elapsed_time = parallel_matrix_multiplication(n)
-
-            # Salvando resultado no arquivo
-            println(file, "$n,$elapsed_time")
-        end
-    end
-end
-
-# Configuração dos testes
-start_size = 1000  # Tamanho inicial
-end_size = 10000   # Tamanho final
-step = 1000        # Incremento do tamanho
-
-test_matrix_sizes(start_size, end_size, step)
-
-using Base.Threads
 using LinearAlgebra
 
-function multiplicacaoMatriz(n::Int)
-    a = fill(1.0, n, n)
-    b = fill(2.0, n, n)
-    c = zeros(n, n)
+# Adiciona workers para paralelismo (usando todos os núcleos disponíveis)
+addprocs(Sys.CPU_THREADS)
 
-    start_time = time()
-    Threads.@threads for i in 1:n
+# Carrega o módulo LinearAlgebra em todos os workers
+@everywhere using LinearAlgebra
+
+# Função para multiplicação de matrizes com transposição e paralelismo
+function multiplicar_matrizes_paralelo(A, B)
+    n = size(A, 1)
+    C = zeros(n, n)  # Matriz resultado
+
+    # Transposição de B
+    B_transposta = transpose(B)
+
+    # Paraleliza a multiplicação usando @distributed
+    @sync @distributed for i in 1:n
         for j in 1:n
-            c[i, j] = sum(a[i, :] .* b[:, j])
+            C[i, j] = dot(A[i, :], B_transposta[j, :])
         end
     end
-    end_time = time()
 
-    elapsed_time = end_time - start_time
-    println("Tamanho da matriz: $n x $n, Tempo de execução: $elapsed_time segundos")
-    return elapsed_time
+    return C
 end
+
+# Função principal
+function main()
+    tamanhos = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
+    tempo_total = 0.0
+
+    for n in tamanhos
+        # Gera matrizes aleatórias
+        A = rand(n, n)
+        B = rand(n, n)
+
+        # Medição do tempo de execução
+        tempo = @elapsed multiplicar_matrizes_paralelo(A, B)
+
+        println("Tamanho da matriz: $n x $n, Tempo de execução: $tempo segundos")
+        tempo_total += tempo
+    end
+
+    tempo_medio = tempo_total / length(tamanhos)
+    println("\nTempo médio de execução: $tempo_medio segundos")
+end
+
+# Executa o programa
+main()
