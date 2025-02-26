@@ -12,8 +12,9 @@ namespace fs = std::filesystem;
 
 #define MAX_CINZA 255
 
-const fs::path DIRETORIO_ENTRADA = "/mnt/c/Users/Cliente/OneDrive/Documentos/PIBIC/PROCESSAMENTO_DE_IMAGENS_PROGAMACAO_PARALELA_PIBIC/Imagens_Selecionadas";
-const fs::path DIRETORIO_SAIDA   = "/mnt/c/Users/Cliente/OneDrive/Documentos/PIBIC 2024 - 2025/Saida_Segmentacao";
+const fs::path DIRETORIO_ENTRADA = "/mnt/c/Users/bicha/Documents/Imagens_Selecionadas";
+const fs::path DIRETORIO_SAIDA   = "/mnt/c/Users/bicha/Documents/Saida_otsu";
+
 const int NUM_EXECUCOES = 1; 
 
 

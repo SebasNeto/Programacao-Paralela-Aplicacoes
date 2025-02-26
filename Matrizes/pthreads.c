@@ -1,27 +1,26 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <pthread.h>
+#include <sys/time.h>
 
-#define NUM_THREADS 4
+#define NUM_THREADS 16
+#define BLOCK_SIZE 64  // Tamanho do bloco para otimização de cache
 
 // Estrutura para passar dados para as threads
 typedef struct {
     int n;
     double **A;
-    double **B_transposta;
+    double **B;
     double **C;
     int start_row;
     int end_row;
 } ThreadData;
 
-// Função para transpor uma matriz
-void transpor_matriz(int n, double **matriz, double **transposta) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            transposta[j][i] = matriz[i][j];
-        }
-    }
+// Função para medir o tempo com precisão
+double get_time() {
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec + tv.tv_usec * 1e-6;
 }
 
 // Função executada por cada thread para multiplicar parte da matriz
@@ -29,16 +28,26 @@ void *multiplicar_matrizes_thread(void *arg) {
     ThreadData *data = (ThreadData *)arg;
     int n = data->n;
     double **A = data->A;
-    double **B_transposta = data->B_transposta;
+    double **B = data->B;
     double **C = data->C;
     int start_row = data->start_row;
     int end_row = data->end_row;
 
-    for (int i = start_row; i < end_row; i++) {
-        for (int j = 0; j < n; j++) {
-            C[i][j] = 0.0;
-            for (int k = 0; k < n; k++) {
-                C[i][j] += A[i][k] * B_transposta[j][k];
+    for (int i = start_row; i < end_row; i += BLOCK_SIZE) {
+        int limite_i = (i + BLOCK_SIZE > end_row) ? end_row : i + BLOCK_SIZE;
+        for (int j = 0; j < n; j += BLOCK_SIZE) {
+            int limite_j = (j + BLOCK_SIZE > n) ? n : j + BLOCK_SIZE;
+            for (int k = 0; k < n; k += BLOCK_SIZE) {
+                int limite_k = (k + BLOCK_SIZE > n) ? n : k + BLOCK_SIZE;
+                for (int ii = i; ii < limite_i; ii++) {
+                    for (int jj = j; jj < limite_j; jj++) {
+                        double soma = 0.0;
+                        for (int kk = k; kk < limite_k; kk++) {
+                            soma += A[ii][kk] * B[kk][jj];
+                        }
+                        C[ii][jj] += soma;
+                    }
+                }
             }
         }
     }
@@ -57,12 +66,10 @@ int main() {
         // Alocação dinâmica de memória para as matrizes
         double **A = (double **)malloc(n * sizeof(double *));
         double **B = (double **)malloc(n * sizeof(double *));
-        double **B_transposta = (double **)malloc(n * sizeof(double *));
         double **C = (double **)malloc(n * sizeof(double *));
         for (int i = 0; i < n; i++) {
             A[i] = (double *)malloc(n * sizeof(double));
             B[i] = (double *)malloc(n * sizeof(double));
-            B_transposta[i] = (double *)malloc(n * sizeof(double));
             C[i] = (double *)malloc(n * sizeof(double));
         }
 
@@ -71,17 +78,12 @@ int main() {
             for (int j = 0; j < n; j++) {
                 A[i][j] = (double)rand() / RAND_MAX;
                 B[i][j] = (double)rand() / RAND_MAX;
+                C[i][j] = 0.0;
             }
         }
 
-        // Transposição da matriz B
-        clock_t inicio_transposicao = clock();
-        transpor_matriz(n, B, B_transposta);
-        clock_t fim_transposicao = clock();
-        double tempo_transposicao = (double)(fim_transposicao - inicio_transposicao) / CLOCKS_PER_SEC;
-
-        // Multiplicação das matrizes (A * B^T) com threads
-        clock_t inicio_multiplicacao = clock();
+        // Medir tempo de execução
+        double inicio_multiplicacao = get_time();
 
         pthread_t threads[NUM_THREADS];
         ThreadData thread_data[NUM_THREADS];
@@ -90,13 +92,10 @@ int main() {
         for (int i = 0; i < NUM_THREADS; i++) {
             thread_data[i].n = n;
             thread_data[i].A = A;
-            thread_data[i].B_transposta = B_transposta;
+            thread_data[i].B = B;
             thread_data[i].C = C;
             thread_data[i].start_row = i * rows_per_thread;
-            thread_data[i].end_row = (i + 1) * rows_per_thread;
-            if (i == NUM_THREADS - 1) {
-                thread_data[i].end_row = n; // A última thread pega as linhas restantes
-            }
+            thread_data[i].end_row = (i == NUM_THREADS - 1) ? n : (i + 1) * rows_per_thread;
             pthread_create(&threads[i], NULL, multiplicar_matrizes_thread, (void *)&thread_data[i]);
         }
 
@@ -104,28 +103,22 @@ int main() {
             pthread_join(threads[i], NULL);
         }
 
-        clock_t fim_multiplicacao = clock();
-        double tempo_multiplicacao = (double)(fim_multiplicacao - inicio_multiplicacao) / CLOCKS_PER_SEC;
+        double fim_multiplicacao = get_time();
+        double tempo_multiplicacao = fim_multiplicacao - inicio_multiplicacao;
 
-        // Tempo total (transposição + multiplicação)
-        double tempo_total_execucao = tempo_transposicao + tempo_multiplicacao;
-        tempo_total += tempo_total_execucao;
+        tempo_total += tempo_multiplicacao;
 
         printf("Tamanho da matriz: %d x %d\n", n, n);
-        printf("Tempo de transposição: %.2f segundos\n", tempo_transposicao);
-        printf("Tempo de multiplicação: %.2f segundos\n", tempo_multiplicacao);
-        printf("Tempo total de execução: %.2f segundos\n\n", tempo_total_execucao);
+        printf("Tempo de multiplicação: %.2f segundos\n\n", tempo_multiplicacao);
 
         // Liberação da memória alocada
         for (int i = 0; i < n; i++) {
             free(A[i]);
             free(B[i]);
-            free(B_transposta[i]);
             free(C[i]);
         }
         free(A);
         free(B);
-        free(B_transposta);
         free(C);
     }
 

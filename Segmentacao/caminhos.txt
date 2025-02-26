@@ -1,18 +1,14 @@
-g++ -o teste otsu.cpp `pkg-config --cflags --libs opencv4`
-g++ -std=c++17 -pthread -o testecomthreads otsu_thread.cpp `pkg-config --cflags --libs opencv4`
+para teste com testecomthreads
+g++ -o testethreads otsu_thread.c -pthread `pkg-config --cflags --libs opencv4`
 
+para teste com openmp
+g++ -o teste_omp otsu_omp.c -fopenmp `pkg-config --cflags --libs opencv4`
 
-para halide
+para teste normal
+g++ teste.cpp -o teste
 
-export LD_LIBRARY_PATH=/mnt/c/Users/Cliente/Downloads/Halide/lib:$LD_LIBRARY_PATH
+teste para julia normal
+julia julia_teste.julia
 
-g++ -std=c++17 -O3 -I"/mnt/c/Users/Cliente/Downloads/Halide/include" -I"/mnt/c/Users/Cliente/Downloads/Halide/share/Halide/tools" otsu_halide.cpp -L"/mnt/c/Users/Cliente/Downloads/Halide/lib" -lpthread -ldl -lpng -lz -ljpeg -lHalide -o testeHalide
-
-ou 
-
-g++ -std=c++17 -O3 -I"/mnt/c/Users/Cliente/Downloads/Halide/include" -I"/mnt/c/Users/Cliente/Downloads/Halide/share/Halide/tools" otsu_halide.cpp -L"/mnt/c/Users/Cliente/Downloads/Halide/lib" -Wl,-rpath,/mnt/c/Users/Cliente/Downloads/Halide/lib -lpthread -ldl -lpng -lz -ljpeg -lHalide -o testeHalide
-
-
-////////
-
-g++ -std=c++17 -O3 -I"/mnt/c/Users/Cliente/Downloads/Halide/include" -I"/mnt/c/Users/Cliente/Downloads/Halide/share/Halide/tools" otsu_halide.cpp -L"/mnt/c/Users/Cliente/Downloads/Halide/lib" -lpthread -ldl -lpng -lz -ljpeg -lHalide -o testeHalide
+teste para julia segmentação
+julia --threads=auto otsu_julia.jl

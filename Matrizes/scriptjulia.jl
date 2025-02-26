@@ -1,50 +1,31 @@
-using Distributed
-using LinearAlgebra
+using LinearAlgebra, BenchmarkTools, Printf, Distributed, Statistics
 
-# Adiciona workers para paralelismo (usando todos os núcleos disponíveis)
-addprocs(Sys.CPU_THREADS)
-
-# Carrega o módulo LinearAlgebra em todos os workers
-@everywhere using LinearAlgebra
-
-# Função para multiplicação de matrizes com transposição e paralelismo
-function multiplicar_matrizes_paralelo(A, B)
-    n = size(A, 1)
-    C = zeros(n, n)  # Matriz resultado
-
-    # Transposição de B
-    B_transposta = transpose(B)
-
-    # Paraleliza a multiplicação usando @distributed
-    @sync @distributed for i in 1:n
-        for j in 1:n
-            C[i, j] = dot(A[i, :], B_transposta[j, :])
-        end
-    end
-
-    return C
+# Função otimizada usando BLAS para multiplicação de matrizes
+function multiplicacao_matriz!(C, A, B)
+    mul!(C, A, B)  # Usa BLAS otimizado
 end
 
-# Função principal
-function main()
-    tamanhos = [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000]
-    tempo_total = 0.0
+# Configuração de threads
+println("Número de threads disponíveis: ", Threads.nthreads())
 
-    for n in tamanhos
-        # Gera matrizes aleatórias
-        A = rand(n, n)
-        B = rand(n, n)
+# Tamanhos das matrizes para teste
+tamanhos = 1000:1000:10000
+tempos = Float64[]
 
-        # Medição do tempo de execução
-        tempo = @elapsed multiplicar_matrizes_paralelo(A, B)
+for N in tamanhos
+    println("Processando matriz $N x $N...")
 
-        println("Tamanho da matriz: $n x $n, Tempo de execução: $tempo segundos")
-        tempo_total += tempo
-    end
+    # Gera matrizes aleatórias
+    A = rand(N, N)
+    B = rand(N, N)
+    C = zeros(N, N)  # Matriz para armazenar resultado
 
-    tempo_medio = tempo_total / length(tamanhos)
-    println("\nTempo médio de execução: $tempo_medio segundos")
+    # Mede o tempo de execução com BenchmarkTools
+    tempo_exec = @belapsed multiplicacao_matriz!($(Ref(C))[], $(Ref(A))[], $(Ref(B))[])
+    
+    push!(tempos, tempo_exec)
+    @printf("Tempo para %d x %d: %.6f segundos\n", N, N, tempo_exec)
 end
 
-# Executa o programa
-main()
+# Exibe a média dos tempos de execução
+@printf("\nMédia do tempo de execução: %.6f segundos\n", mean(tempos))
