@@ -114,7 +114,7 @@ function processar_imagem(caminho_entrada::String, caminho_saida::String)
     save(caminho_saida, img)  # Salva a imagem segmentada
 
     tempo_execucao = (time() - inicio) * 1000
-    println("Imagem $(basename(caminho_entrada)) processada em $(round(tempo_execucao, digits=2)) ms")
+    println("Imagem $(basename(caminho_entrada)) processada em $(round(tempo_execucao, digits=4)) ms")
     return tempo_execucao
 end
 
@@ -139,7 +139,7 @@ function processar_diretorio(diretorio_entrada::String, diretorio_saida::String)
 
     if !isempty(tempos_execucao)
         media_tempo = mean(tempos_execucao)
-        println("\n⏳ Tempo médio por imagem: $(round(media_tempo, digits=2)) ms")
+        println("\n⏳ Tempo médio por imagem: $(round(media_tempo, digits=4)) ms")
     else
         println("\nNenhuma imagem foi processada.")
     end

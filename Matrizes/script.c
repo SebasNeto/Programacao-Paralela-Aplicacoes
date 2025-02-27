@@ -68,9 +68,9 @@ int main() {
         tempo_total += tempo_total_execucao;
 
         printf("Tamanho da matriz: %d x %d\n", n, n);
-        printf("Tempo de transposição: %.2f segundos\n", tempo_transposicao);
-        printf("Tempo de multiplicação: %.2f segundos\n", tempo_multiplicacao);
-        printf("Tempo total de execução: %.2f segundos\n\n", tempo_total_execucao);
+        printf("Tempo de transposição: %.4f segundos\n", tempo_transposicao);
+        printf("Tempo de multiplicação: %.4f segundos\n", tempo_multiplicacao);
+        printf("Tempo total de execução: %.4f segundos\n\n", tempo_total_execucao);
 
         // Liberação da memória alocada
         for (int i = 0; i < n; i++) {
@@ -86,7 +86,7 @@ int main() {
     }
 
     double tempo_medio = tempo_total / num_tamanhos;
-    printf("Tempo médio de execução: %.2f segundos\n", tempo_medio);
+    printf("Tempo médio de execução: %.4f segundos\n", tempo_medio);
 
     return 0;
 }

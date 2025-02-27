@@ -83,7 +83,7 @@ int main() {
         double fim = omp_get_wtime();
         
         tempos[t] = fim - inicio;
-        printf("✅ Concluído: Tamanho %d x %d -> Tempo: %.3f segundos\n\n", n, n, tempos[t]);
+        printf("✅ Concluído: Tamanho %d x %d -> Tempo: %.4f segundos\n\n", n, n, tempos[t]);
 
         liberar_matriz(A, n);
         liberar_matriz(B, n);
@@ -97,6 +97,6 @@ int main() {
     }
     double media_tempo = soma_tempos / num_testes;
 
-    printf("\n📊 Média dos tempos de execução: %.3f segundos\n", media_tempo);
+    printf("\n📊 Média dos tempos de execução: %.4f segundos\n", media_tempo);
     return 0;
 }

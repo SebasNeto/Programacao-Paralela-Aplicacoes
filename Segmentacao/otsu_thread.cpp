@@ -125,7 +125,7 @@ double processarImagem(const char* caminhoEntrada, const char* caminhoSaida) {
     // Salva a imagem segmentada
     cv::imwrite(caminhoSaida, imagemSegmentada);
 
-    return ((double)clock() / CLOCKS_PER_SEC - inicio) * 1000.0; // Retorna tempo em milissegundos
+    return ((double)clock() / CLOCKS_PER_SEC - inicio) * 1000.0000; // Retorna tempo em milissegundos
 }
 
 //----------------------------------------------------------
@@ -148,7 +148,7 @@ void processarDiretorio(const char* diretorioEntrada, const char* diretorioSaida
         if (stat(caminhoEntrada.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
             std::string caminhoSaida = std::string(diretorioSaida) + "/" + nome;
             double tempo = processarImagem(caminhoEntrada.c_str(), caminhoSaida.c_str());
-            printf("Processada %s em %.2f ms\n", caminhoEntrada.c_str(), tempo);
+            printf("Processada %s em %.4f ms\n", caminhoEntrada.c_str(), tempo);
         }
     }
     closedir(dp);

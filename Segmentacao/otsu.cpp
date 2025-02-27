@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <cctype>
+#include <iomanip>
+
 
 using namespace cv;
 using namespace std;
@@ -126,7 +128,7 @@ vector<double> processarDiretorio(const fs::path& diretorioEntrada,
             temposExecucao.push_back(tempo);
             cout << "Tempo de processamento de " 
                  << caminhoEntrada.filename().string() << ": " 
-                 << tempo << " ms" << endl;
+                 << fixed << setprecision(4) << tempo << " ms" << endl;
         }
     }
     return temposExecucao;
@@ -148,7 +150,7 @@ void multiplasExecucoes(const fs::path& diretorioEntrada,
         if (!tempos.empty()) {
             double media = soma / tempos.size();
             cout << "Média de tempo para a execução " << (i + 1) 
-                 << ": " << media << " ms" << endl;
+            << ": " << fixed << setprecision(4) << media << " ms" << endl;
         } else {
             cout << "Nenhuma imagem processada nesta execução." << endl;
         }
@@ -159,7 +161,8 @@ void multiplasExecucoes(const fs::path& diretorioEntrada,
             somaTotal += t;
         }
         double mediaGeral = somaTotal / todosTempos.size();
-        cout << "Média geral das execuções: " << mediaGeral << " ms" << endl;
+        cout << "Média geral das execuções: " << fixed << setprecision(4) << mediaGeral << " ms" << endl;
+
     } else {
         cout << "Nenhuma imagem foi processada em nenhuma execução." << endl;
     }

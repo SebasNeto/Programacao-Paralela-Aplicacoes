@@ -24,8 +24,8 @@ for N in tamanhos
     tempo_exec = @belapsed multiplicacao_matriz!($(Ref(C))[], $(Ref(A))[], $(Ref(B))[])
     
     push!(tempos, tempo_exec)
-    @printf("Tempo para %d x %d: %.6f segundos\n", N, N, tempo_exec)
+    @printf("Tempo para %d x %d: %.4f segundos\n", N, N, tempo_exec)
 end
 
 # Exibe a média dos tempos de execução
-@printf("\nMédia do tempo de execução: %.6f segundos\n", mean(tempos))
+@printf("\nMédia do tempo de execução: %.4f segundos\n", mean(tempos))

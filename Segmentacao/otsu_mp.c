@@ -106,7 +106,7 @@ double processarImagem(const char* caminhoEntrada, const char* caminhoSaida) {
     cv::imwrite(caminhoSaida, imagemSegmentada);
 
     double tempo_execucao = (omp_get_wtime() - inicio) * 1000.0; // Tempo em milissegundos
-    printf("Imagem %s processada em %.2f ms\n", caminhoEntrada, tempo_execucao);
+    printf("Imagem %s processada em %.4f ms\n", caminhoEntrada, tempo_execucao);
     return tempo_execucao;
 }
 
@@ -141,7 +141,7 @@ void processarDiretorio(const char* diretorioEntrada, const char* diretorioSaida
 
     if (num_imagens > 0) {
         double media = tempo_total / num_imagens;
-        printf("\nTempo médio por imagem: %.2f ms\n", media);
+        printf("\nTempo médio por imagem: %.4f ms\n", media);
     } else {
         printf("\nNenhuma imagem foi processada.\n");
     }
