@@ -2,6 +2,11 @@ gcc -o quicksort_threads quicksort_threads.c -pthread
 
 gcc -o quicksort_openmp quicksort_openmp.c -fopenmp
 
+teste em julia 
+export JULIA_NUM_THREADS=16
+julia quick_sort_julia.jl
+
+ou escolha automatica 
 julia --threads=auto quicksort_julia.jl
 
 

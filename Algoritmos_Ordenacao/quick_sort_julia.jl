@@ -1,42 +1,72 @@
 using Base.Threads, Statistics
+#correct
+const MIN_SIZE = 100_000  # Ajuste baseado no desempenho prático
 
-const MIN_SIZE = 100_000  # Aumentado para reduzir a criação excessiva de tarefas
+@inline function choose_pivot!(vetor, baixo, alto)
+    mid = baixo + (alto - baixo) ÷ 2
+    if vetor[baixo] > vetor[mid]
+        vetor[baixo], vetor[mid] = vetor[mid], vetor[baixo]
+    end
+    if vetor[baixo] > vetor[alto]
+        vetor[baixo], vetor[alto] = vetor[alto], vetor[baixo]
+    end
+    if vetor[mid] > vetor[alto]
+        vetor[mid], vetor[alto] = vetor[alto], vetor[mid]
+    end
+    vetor[mid], vetor[alto] = vetor[alto], vetor[mid]
+    return vetor[alto]
+end
 
-function particionar!(vetor, baixo, alto)
-    pivo = vetor[alto]
-    i = baixo - 1
-    for j in baixo:(alto - 1)
-        if vetor[j] < pivo
+@inline function particionar!(vetor, baixo, alto)
+    pivo = choose_pivot!(vetor, baixo, alto)
+    i, j = baixo, alto - 1
+    while true
+        while vetor[i] < pivo
             i += 1
-            vetor[i], vetor[j] = vetor[j], vetor[i]
+        end
+        while j > baixo && vetor[j] > pivo
+            j -= 1
+        end
+        if i >= j
+            break
+        end
+        vetor[i], vetor[j] = vetor[j], vetor[i]
+        i += 1
+        j -= 1
+    end
+    vetor[i], vetor[alto] = vetor[alto], vetor[i]
+    return i
+end
+
+function quicksort_sequencial!(vetor, baixo, alto)
+    while baixo < alto
+        pi = particionar!(vetor, baixo, alto)
+        if pi - baixo < alto - pi
+            quicksort_sequencial!(vetor, baixo, pi - 1)
+            baixo = pi + 1
+        else
+            quicksort_sequencial!(vetor, pi + 1, alto)
+            alto = pi - 1
         end
     end
-    vetor[i + 1], vetor[alto] = vetor[alto], vetor[i + 1]
-    return i + 1
 end
 
-# Versão sequencial para partições pequenas ou quando a profundidade máxima for atingida
-function quicksort_sequencial!(vetor, baixo, alto)
+function quicksort_parallel!(vetor, baixo, alto, depth=0, max_depth=Threads.nthreads() * 2)
     if baixo < alto
-        pi = particionar!(vetor, baixo, alto)
-        quicksort_sequencial!(vetor, baixo, pi - 1)
-        quicksort_sequencial!(vetor, pi + 1, alto)
-    end
-end
-
-function quicksort_parallel!(vetor, baixo, alto, depth=0, max_depth=Threads.nthreads())
-    if baixo < alto
-        # Se a partição for pequena ou se atingiu a profundidade máxima, use a versão sequencial
         if (alto - baixo) < MIN_SIZE || depth >= max_depth
             quicksort_sequencial!(vetor, baixo, alto)
             return
         end
 
         pi = particionar!(vetor, baixo, alto)
-        t1 = @spawn quicksort_parallel!(vetor, baixo, pi - 1, depth + 1, max_depth)
-        t2 = @spawn quicksort_parallel!(vetor, pi + 1, alto, depth + 1, max_depth)
-        fetch(t1)
-        fetch(t2)
+
+        @threads for i in 1:2
+            if i == 1
+                quicksort_parallel!(vetor, baixo, pi - 1, depth + 1, max_depth)
+            else
+                quicksort_parallel!(vetor, pi + 1, alto, depth + 1, max_depth)
+            end
+        end
     end
 end
 
