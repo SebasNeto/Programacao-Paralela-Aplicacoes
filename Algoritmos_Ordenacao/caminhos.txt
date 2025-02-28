@@ -1,0 +1,14 @@
+gcc -o quicksort_threads quicksort_threads.c -pthread
+
+gcc -o quicksort_openmp quicksort_openmp.c -fopenmp
+
+julia --threads=auto quicksort_julia.jl
+
+
+para quicksort_openmp
+
+export OMP_NUM_THREADS=16
+e logo apos
+./teste
+
+quicksort_openmp
