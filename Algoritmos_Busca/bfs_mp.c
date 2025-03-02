@@ -6,7 +6,7 @@
 
 #define AVG_DEGREE 10
 // Lista de tamanhos de vértices para teste (ajuste conforme necessário)
-long sizes[] = {100000, 500000, 1000000,25000000};
+long sizes[] = {500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000};
 int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
 //correct
 // Estrutura que representa cada nó (lista de adjacência)

@@ -23,50 +23,43 @@ function create_graph(n::Int, avg_degree::Int)
 end
 
 # BFS Paralela com controle de concorrência
-function parallel_bfs(graph::Vector{Vector{Int}}, start::Int)
+function parallel_bfs_optimized(graph::Vector{Vector{Int}}, start::Int)
     n = length(graph)
-    distances = fill(-1, n)  # Vetor normal para armazenar distâncias
+    distances = fill(-1, n)
     distances[start] = 0
-    
-    frontier = Deque{Int}()  # Estrutura mais eficiente para BFS
-    push!(frontier, start)
-
+    frontier = [start]
     level = 0
-    lock = Threads.SpinLock()  # Lock para proteger a fronteira
 
     while !isempty(frontier)
-        next_frontier = Deque{Int}()
+        # Cria buffers locais para cada thread
+        local_next = [Vector{Int}() for _ in 1:Threads.nthreads()]
+        frontier_copy = copy(frontier)
 
-        # Criar uma cópia segura da fronteira para evitar concorrência
-        frontier_copy = collect(frontier)
-
-        @threads for i in 1:length(frontier_copy)
-            u = frontier_copy[i]  # Pegamos um nó
-
-            for v in graph[u]
-                if distances[v] == -1  # Se ainda não foi visitado
+        Threads.@threads for i in 1:length(frontier_copy)
+            u = frontier_copy[i]
+            @inbounds for v in graph[u]
+                # Checagem sem lock; pode ocorrer condição de corrida,
+                # mas, se ambos escreverem o mesmo valor (level+1), o impacto é apenas
+                # uma possível inserção duplicada na próxima fronteira.
+                if distances[v] == -1
                     distances[v] = level + 1
-                    
-                    # Protege o acesso a next_frontier
-                    Threads.lock(lock)
-                    push!(next_frontier, v)
-                    Threads.unlock(lock)
+                    push!(local_next[Threads.threadid()], v)
                 end
             end
         end
-        
-        # Protege o acesso à fronteira principal
-        Threads.lock(lock)
-        frontier = next_frontier
-        Threads.unlock(lock)
 
+        # Combina os buffers locais na próxima fronteira
+        next_frontier = reduce(vcat, local_next)
+        frontier = next_frontier
         level += 1
     end
+
     return distances
 end
 
+
 function main()
-    sizes = [100000, 500000, 1000000, 25000000]
+    sizes = [500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000]
     avg_degree = 10
     total_time = 0.0
 
@@ -74,7 +67,7 @@ function main()
         println("Tamanho do grafo: $s vértices")
         graph = create_graph(s, avg_degree)
         t_start = time()
-        distances = parallel_bfs(graph, 1)  
+        distances = parallel_bfs_optimized(graph, 1)  
         t_end = time()
         t = t_end - t_start
         total_time += t
