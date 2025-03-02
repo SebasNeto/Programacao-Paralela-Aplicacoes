@@ -1,0 +1,5 @@
+gcc -o testereducaomp reducao_paralela_mp.c -fopenmp -O2
+
+export OMP_NUM_THREADS=16
+
+gcc -O3 -march=native -pthread -o testereduca_threads reducao_paralela_threads.c
