@@ -3,3 +3,8 @@ gcc -o testereducaomp reducao_paralela_mp.c -fopenmp -O2
 export OMP_NUM_THREADS=16
 
 gcc -O3 -march=native -pthread -o testereduca_threads reducao_paralela_threads.c
+
+
+monte carlo
+
+gcc -O2 -o monte_carlo_threads monte_carlo_threads.c -lpthread -lrt
