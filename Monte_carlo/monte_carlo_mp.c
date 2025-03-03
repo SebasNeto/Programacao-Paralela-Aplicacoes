@@ -4,22 +4,20 @@
 #include <omp.h>
 
 #define NUM_ITER 10
-#define NUM_SAMPLES 100000000  // Número de amostras para cada iteração
+#define NUM_SAMPLES 100000000  
 
 int main(void) {
     double total_time = 0.0;
     
-    // Inicializa a semente do gerador rand() para uso fora da região paralela
-    srand(time(NULL));
+    srand48(time(NULL));
     
     for (int iter = 0; iter < NUM_ITER; iter++) {
         long long count = 0;
         double start_time = omp_get_wtime();
         
-        // Paraleliza a região usando redução para somar as contagens de cada thread
         #pragma omp parallel reduction(+:count)
         {
-            // Cada thread utiliza sua própria semente baseada no ID da thread e no tempo atual
+
             unsigned int seed = omp_get_thread_num() + time(NULL);
             #pragma omp for
             for (long long i = 0; i < NUM_SAMPLES; i++) {

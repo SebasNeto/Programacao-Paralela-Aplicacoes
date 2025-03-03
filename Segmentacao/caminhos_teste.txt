@@ -1,0 +1,19 @@
+
+versão sequencial:
+g++ otsu.cpp -o teste `pkg-config --cflags --libs opencv4`
+
+versão openmp:
+export OMP_NUM_THREADS=16
+g++ -o teste_omp otsu_mp.c -fopenmp `pkg-config --cflags --libs opencv4`
+
+versão julia:
+export JULIA_NUM_THREADS=16
+julia --threads=auto monte_carlo_julia.jl -> escolha automatica de threads
+julia otsu_julia.jl
+
+versão threads:
+g++ -o testethreads otsu_thread.c -pthread `pkg-config --cflags --libs opencv4`
+
+ou
+
+gcc -O3 -march=native -pthread -o otsu_thread otsu_thread.c

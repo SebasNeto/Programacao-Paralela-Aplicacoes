@@ -1,0 +1,14 @@
+versão sequencial:
+gcc monte_carlo.c -o testec
+
+versão openmp:
+export OMP_NUM_THREADS=16
+gcc -o testemp monte_carlo_mp.c -fopenmp -O2 -lm -lrt
+
+versão julia:
+export JULIA_NUM_THREADS=16
+julia --threads=auto monte_carlo_julia.jl -> escolha automatica de threads
+julia monte_carlo_julia.jl
+
+versão threads:
+gcc -o montecarlothreads monte_carlo_threads.c -pthread -O2 -lm -lrt

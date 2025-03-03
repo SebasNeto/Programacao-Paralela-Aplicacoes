@@ -3,9 +3,8 @@
 #include <time.h>
 
 #define NUM_ITER 10
-#define NUM_SAMPLES 100000000  // Número de amostras para cada iteração
+#define NUM_SAMPLES 100000000 
 
-// Função auxiliar para gerar números aleatórios em [0, 1]
 double random_double() {
     return (double)rand() / (double)RAND_MAX;
 }

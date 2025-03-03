@@ -1,0 +1,14 @@
+versão sequencial:
+gcc reducao_paralela.c -o testec
+
+versão openmp:
+export OMP_NUM_THREADS=16
+gcc -o testereducaomp reducao_paralela_mp.c -fopenmp -O2 -lm -lrt
+
+versão julia:
+export JULIA_NUM_THREADS=16
+julia --threads=auto monte_carlo_julia.jl -> escolha automatica de threads
+julia reducao_paralela_julia.jl
+
+versão threads:
+gcc -O3 -march=native -pthread -o testereduca_threads reducao_paralela_threads.c

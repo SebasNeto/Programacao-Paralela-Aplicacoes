@@ -1,0 +1,18 @@
+versão sequencial:
+gcc merge_sort_sequencial.c -o testemergesequencial
+
+versão openmp:
+export OMP_NUM_THREADS=16
+gcc -o testemergemp merge_sort_mp.c -fopenmp -O2 -lm -lrt
+
+versão julia:
+export JULIA_NUM_THREADS=16
+julia --threads=auto monte_carlo_julia.jl -> escolha automatica de threads
+julia merge_sort_julia.jl
+
+versão threads:
+gcc -o merge_threads merge_sort_threads.c -pthread
+
+ou
+
+gcc -O3 -march=native -pthread -o merge_threads merge_sort_threads.c

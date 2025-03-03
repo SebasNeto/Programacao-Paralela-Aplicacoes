@@ -1,0 +1,18 @@
+versão sequencial:
+gcc bfs_c.c -o testebfsc
+
+versão openmp:
+export OMP_NUM_THREADS=16
+gcc -o testebfsomp bfs_mp.c -fopenmp -O2 -lm -lrt
+
+versão julia:
+export JULIA_NUM_THREADS=16
+julia --threads=auto monte_carlo_julia.jl -> escolha automatica de threads
+julia bfs_julia.jl
+
+versão threads:
+gcc -o bfs_threads bfs_threads.c -pthread
+
+ou
+
+gcc -O3 -march=native -pthread -o bfs_threads bfs_threads.c

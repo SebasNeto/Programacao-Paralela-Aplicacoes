@@ -1,0 +1,18 @@
+versão sequencial:
+gcc quick_sort_sequencial.c -o testequicksequencial
+
+versão openmp:
+export OMP_NUM_THREADS=16
+gcc -o testequickmp quick_sort_mp.c -fopenmp -O2 -lm -lrt
+
+versão julia:
+export JULIA_NUM_THREADS=16
+julia --threads=auto monte_carlo_julia.jl -> escolha automatica de threads
+julia quick_sort_julia.jl
+
+versão threads:
+gcc -o quick_threads quick_sort_threads.c -pthread
+
+ou
+
+gcc -O3 -march=native -pthread -o quick_threads quick_sort_threads.c
