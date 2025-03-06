@@ -9,85 +9,83 @@ namespace fs = std::filesystem;
 using namespace Halide;
 
 // Função para aplicar a limiarização de Otsu em uma imagem
-Buffer<uint8_t> aplicar_otsu(const Buffer<uint8_t>& input) {
-    // Se a imagem tiver 3 canais (RGB), converte para grayscale
-    Buffer<uint8_t> gray;
-    if (input.channels() == 3) {
-        gray = Buffer<uint8_t>(input.width(), input.height());
-        for (int y = 0; y < input.height(); y++) {
-            for (int x = 0; x < input.width(); x++) {
+Buffer<uint8_t> aplicar_limiarizacao_otsu(const Buffer<uint8_t>& imagem_entrada) {
+    // Se a imagem tiver 3 canais (RGB), converte para escala de cinza
+    Buffer<uint8_t> escala_cinza;
+    if (imagem_entrada.channels() == 3) {
+        escala_cinza = Buffer<uint8_t>(imagem_entrada.width(), imagem_entrada.height());
+        for (int y = 0; y < imagem_entrada.height(); y++) {
+            for (int x = 0; x < imagem_entrada.width(); x++) {
                 // Fórmula para conversão: 0.299*R + 0.587*G + 0.114*B
-                float r = input(x, y, 0);
-                float g = input(x, y, 1);
-                float b = input(x, y, 2);
-                gray(x, y) = (uint8_t)(0.299f * r + 0.587f * g + 0.114f * b);
+                float r = imagem_entrada(x, y, 0);
+                float g = imagem_entrada(x, y, 1);
+                float b = imagem_entrada(x, y, 2);
+                escala_cinza(x, y) = (uint8_t)(0.299f * r + 0.587f * g + 0.114f * b);
             }
         }
-    }
-    else {
+    } else {
         // Se já for monocromática, usa diretamente
-        gray = input;
+        escala_cinza = imagem_entrada;
     }
 
     // === Etapa 1: Calcular o histograma usando Halide ===
-    Func histogram("histogram");
+    Func histograma("histograma");
     Var i;
     // Inicializa o histograma com zero para 256 níveis
-    histogram(i) = cast<int32_t>(0);
-    RDom r(0, gray.width(), 0, gray.height());
+    histograma(i) = cast<int32_t>(0);
+    RDom r(0, escala_cinza.width(), 0, escala_cinza.height());
     // Incrementa o histograma no índice correspondente ao valor do pixel
-    histogram(gray(r.x, r.y)) += 1;
+    histograma(escala_cinza(r.x, r.y)) += 1;
 
     // Realiza o cálculo do histograma (buffer de 256 elementos)
-    Buffer<int32_t> hist = histogram.realize({ 256 });
+    Buffer<int32_t> hist = histograma.realize({256});
 
     // === Etapa 2: Calcular o limiar de Otsu no host ===
-    double total_pixels = gray.width() * gray.height();
-    double sum_total = 0.0;
+    double total_pix = escala_cinza.width() * escala_cinza.height();
+    double soma_total = 0.0;
     for (int j = 0; j < 256; j++) {
-        sum_total += j * hist(j);
+        soma_total += j * hist(j);
     }
 
-    double sumB = 0.0;
+    double somaB = 0.0;
     double wB = 0.0;
-    double max_variance = 0.0;
-    int threshold = 0;
+    double variancia_maxima = 0.0;
+    int limiar = 0;
 
     for (int t = 0; t < 256; t++) {
         wB += hist(t);
         if (wB == 0)
             continue;
 
-        double wF = total_pixels - wB;
+        double wF = total_pix - wB;
         if (wF == 0)
             break;
 
-        sumB += t * hist(t);
-        double mB = sumB / wB;
-        double mF = (sum_total - sumB) / wF;
-        double variance = wB * wF * (mB - mF) * (mB - mF);
+        somaB += t * hist(t);
+        double mediaB = somaB / wB;
+        double mediaF = (soma_total - somaB) / wF;
+        double variancia = wB * wF * (mediaB - mediaF) * (mediaB - mediaF);
 
-        if (variance > max_variance) {
-            max_variance = variance;
-            threshold = t;
+        if (variancia > variancia_maxima) {
+            variancia_maxima = variancia;
+            limiar = t;
         }
     }
-    std::cout << "Limiar de Otsu calculado: " << threshold << std::endl;
+    std::cout << "Limiar de Otsu calculado: " << limiar << std::endl;
 
     // === Etapa 3: Binarizar a imagem usando o limiar calculado ===
-    Func binary("binary");
+    Func binario("binario");
     Var x, y;
-    binary(x, y) = select(gray(x, y) > threshold, cast<uint8_t>(255), cast<uint8_t>(0));
+    binario(x, y) = select(escala_cinza(x, y) > limiar, cast<uint8_t>(255), cast<uint8_t>(0));
 
     // Agendamento para melhor desempenho
-    binary.vectorize(x, 8).parallel(y);
+    binario.vectorize(x, 8).parallel(y);
 
     // Realiza a computação da imagem binarizada
-    Buffer<uint8_t> output = binary.realize({ gray.width(), gray.height() });
+    Buffer<uint8_t> imagem_saida = binario.realize({escala_cinza.width(), escala_cinza.height()});
 
-    return output;
+    return imagem_saida;
 }
-
 
 int main() {
     // Definir diretórios de entrada e saída
@@ -108,10 +106,10 @@ int main() {
 
     // Listar todas as imagens no diretório de entrada
     std::vector<fs::path> imagens;
-    for (const auto& entry : fs::directory_iterator(DIRETORIO_ENTRADA)) {
-        if (entry.is_regular_file() &&
-            (entry.path().extension() == ".png" || entry.path().extension() == ".jpg")) {
-            imagens.push_back(entry.path());
+    for (const auto& entrada : fs::directory_iterator(DIRETORIO_ENTRADA)) {
+        if (entrada.is_regular_file() &&
+            (entrada.path().extension() == ".png" || entrada.path().extension() == ".jpg")) {
+            imagens.push_back(entrada.path());
         }
     }
 
@@ -124,42 +122,42 @@ int main() {
     double tempo_total = 0.0;
     for (const auto& caminho_imagem : imagens) {
         // Carregar a imagem
-        Buffer<uint8_t> input;
+        Buffer<uint8_t> imagem_entrada;
         try {
-            input = Tools::load_image(caminho_imagem.string());
+            imagem_entrada = Tools::load_image(caminho_imagem.string());
         }
         catch (const std::exception& e) {
             std::cerr << "Erro ao carregar a imagem " << caminho_imagem.filename()
-                << ": " << e.what() << std::endl;
+                      << ": " << e.what() << std::endl;
             continue;
         }
 
-        if (!input.defined()) {
+        if (!imagem_entrada.defined()) {
             std::cerr << "Erro: Buffer da imagem " << caminho_imagem.filename()
-                << " não foi carregado corretamente." << std::endl;
+                      << " não foi carregado corretamente." << std::endl;
             continue;
         }
 
         // --- Execução de aquecimento (primeira execução descartada) ---
         try {
-            Buffer<uint8_t> dummy = aplicar_otsu(input);
+            Buffer<uint8_t> dummy = aplicar_limiarizacao_otsu(imagem_entrada);
         }
         catch (const std::exception& e) {
             std::cerr << "Erro na execução de aquecimento para a imagem " << caminho_imagem.filename()
-                << ": " << e.what() << std::endl;
+                      << ": " << e.what() << std::endl;
             continue;
         }
 
         // Medir o tempo da segunda execução
         auto inicio = std::chrono::high_resolution_clock::now();
 
-        Buffer<uint8_t> output;
+        Buffer<uint8_t> imagem_saida;
         try {
-            output = aplicar_otsu(input);
+            imagem_saida = aplicar_limiarizacao_otsu(imagem_entrada);
         }
         catch (const std::exception& e) {
             std::cerr << "Erro ao processar a imagem " << caminho_imagem.filename()
-                << ": " << e.what() << std::endl;
+                      << ": " << e.what() << std::endl;
             continue;
         }
 
@@ -170,28 +168,25 @@ int main() {
         // Salvar a imagem binarizada
         fs::path caminho_saida = DIRETORIO_SAIDA / caminho_imagem.filename();
         try {
-            Tools::save_image(output, caminho_saida.string());
+            Tools::save_image(imagem_saida, caminho_saida.string());
         }
         catch (const std::exception& e) {
             std::cerr << "Erro ao salvar a imagem " << caminho_saida.filename()
-                << ": " << e.what() << std::endl;
+                      << ": " << e.what() << std::endl;
             continue;
         }
 
         std::cout << "Processada: " << caminho_imagem.filename()
-            << " | Tempo: " << duracao.count() << "s" << std::endl;
+                  << " | Tempo: " << duracao.count() << "s" << std::endl;
     }
 
-    // Calcular a média do tempo de execução por imagem (considerando somente execuções aquecidas)
+    // Calcular a média do tempo de execução por imagem
     if (!imagens.empty()) {
         double tempo_medio = tempo_total / imagens.size();
-        std::cout << "Tempo médio de execução por imagem: "
-            << tempo_medio << "s" << std::endl;
-    }
-    else {
+        std::cout << "Tempo médio de execução por imagem: " << tempo_medio << "s" << std::endl;
+    } else {
         std::cerr << "Nenhuma imagem foi processada com sucesso." << std::endl;
     }
 
     return 0;
 }
-

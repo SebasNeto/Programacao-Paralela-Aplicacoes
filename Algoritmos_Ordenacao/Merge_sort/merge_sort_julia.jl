@@ -1,11 +1,11 @@
 using Base.Threads, Statistics
 
-const BASE_THRESH = 10_000  # Threshold base para paralelismo
+const LIMIAR_BASE = 10_000  # Limiar base para paralelismo
 
 # Função otimizada para mesclar dois subarrays ordenados
-@inline function merge!(A, B, lo, mid, hi)
-    i, j, k = lo, mid + 1, lo
-    @inbounds while i ≤ mid && j ≤ hi
+@inline function mesclar!(A, B, inicio, meio, fim)
+    i, j, k = inicio, meio + 1, inicio
+    @inbounds while i ≤ meio && j ≤ fim
         if A[i] ≤ A[j]
             B[k] = A[i]
             i += 1
@@ -15,52 +15,52 @@ const BASE_THRESH = 10_000  # Threshold base para paralelismo
         end
         k += 1
     end
-    @inbounds while i ≤ mid
+    @inbounds while i ≤ meio
         B[k] = A[i]
         i += 1; k += 1
     end
-    @inbounds while j ≤ hi
+    @inbounds while j ≤ fim
         B[k] = A[j]
         j += 1; k += 1
     end
 end
 
 # Implementação otimizada do Merge Sort paralelo
-function pmergesort!(A, B, lo, hi, depth, max_depth, use_AtoB, threshold)
-    if hi - lo + 1 ≤ threshold
-        sort!(view(A, lo:hi))  # Usa ordenação nativa para subarrays pequenos
-        if !use_AtoB
-            B[lo:hi] .= A[lo:hi]  # Copia o resultado de volta se necessário
+function merge_sort_paralelo!(A, B, inicio, fim, profundidade, max_profundidade, usar_A_para_B, limiar)
+    if fim - inicio + 1 ≤ limiar
+        sort!(view(A, inicio:fim))  # Usa ordenação nativa para subarrays pequenos
+        if !usar_A_para_B
+            B[inicio:fim] .= A[inicio:fim]  # Copia o resultado de volta se necessário
         end
         return
     end
 
-    mid = (lo + hi) ÷ 2
+    meio = (inicio + fim) ÷ 2
 
-    if depth < max_depth
-        left_task = @spawn pmergesort!(A, B, lo, mid, depth + 1, max_depth, !use_AtoB, threshold)
-        pmergesort!(A, B, mid + 1, hi, depth + 1, max_depth, !use_AtoB, threshold)
-        fetch(left_task)
+    if profundidade < max_profundidade
+        tarefa_esquerda = @spawn merge_sort_paralelo!(A, B, inicio, meio, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        merge_sort_paralelo!(A, B, meio + 1, fim, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        fetch(tarefa_esquerda)
     else
-        pmergesort!(A, B, lo, mid, depth + 1, max_depth, !use_AtoB, threshold)
-        pmergesort!(A, B, mid + 1, hi, depth + 1, max_depth, !use_AtoB, threshold)
+        merge_sort_paralelo!(A, B, inicio, meio, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        merge_sort_paralelo!(A, B, meio + 1, fim, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
     end
 
-    if use_AtoB
-        merge!(A, B, lo, mid, hi)
+    if usar_A_para_B
+        mesclar!(A, B, inicio, meio, fim)
     else
-        merge!(B, A, lo, mid, hi)
+        mesclar!(B, A, inicio, meio, fim)
     end
 end
 
 # Função principal que define um limiar de paralelismo adaptável
-function parallel_mergesort!(A)
+function ordenacao_merge_paralelo!(A)
     max_threads = Threads.nthreads()
-    max_depth = Int(log2(max_threads))  # Define a profundidade máxima com base no número de threads
-    dynamic_thresh = max(BASE_THRESH, length(A) ÷ (2 * max_threads))  # Ajuste dinâmico do THRESHOLD
+    max_profundidade = Int(log2(max_threads))  # Define a profundidade máxima com base no número de threads
+    limiar_dinamico = max(LIMIAR_BASE, length(A) ÷ (2 * max_threads))  # Ajuste dinâmico do limiar
 
     B = similar(A)
-    pmergesort!(A, B, 1, length(A), 0, max_depth, true, dynamic_thresh)
+    merge_sort_paralelo!(A, B, 1, length(A), 0, max_profundidade, true, limiar_dinamico)
     return A
 end
 
@@ -72,12 +72,12 @@ function executar_teste()
     
     println("Número de threads: ", Threads.nthreads())
     println("Profundidade máxima de paralelismo: ", Int(log2(Threads.nthreads())))
-    println("Threshold dinâmico ajustado para tamanho do vetor\n")
+    println("Limiar dinâmico ajustado para tamanho do vetor\n")
 
     for tamanho in tamanhos
         vetor = rand(1:100000, tamanho)
         inicio = time()
-        sorted = parallel_mergesort!(vetor)
+        ordenado = ordenacao_merge_paralelo!(vetor)
         tempo_execucao = round(time() - inicio, digits=4)
         push!(tempos, tempo_execucao)
         println("Tamanho: $tamanho - Tempo: $tempo_execucao segundos")

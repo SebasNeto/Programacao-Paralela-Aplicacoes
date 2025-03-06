@@ -3,39 +3,38 @@
 #include <time.h>
 #include <omp.h>
 
-#define NUM_ITER 10
-#define NUM_SAMPLES 100000000  
+#define NUM_ITERACOES 10
+#define NUM_AMOSTRAS 100000000  
 
 int main(void) {
-    double total_time = 0.0;
+    double tempo_total = 0.0;
     
     srand48(time(NULL));
     
-    for (int iter = 0; iter < NUM_ITER; iter++) {
-        long long count = 0;
-        double start_time = omp_get_wtime();
+    for (int iteracao = 0; iteracao < NUM_ITERACOES; iteracao++) {
+        long long contador = 0;
+        double tempo_inicio = omp_get_wtime();
         
-        #pragma omp parallel reduction(+:count)
+        #pragma omp parallel reduction(+:contador)
         {
-
-            unsigned int seed = omp_get_thread_num() + time(NULL);
+            unsigned int semente = omp_get_thread_num() + time(NULL);
             #pragma omp for
-            for (long long i = 0; i < NUM_SAMPLES; i++) {
-                double x = ((double)rand_r(&seed) / RAND_MAX) * 2.0 - 1.0;
-                double y = ((double)rand_r(&seed) / RAND_MAX) * 2.0 - 1.0;
+            for (long long i = 0; i < NUM_AMOSTRAS; i++) {
+                double x = ((double)rand_r(&semente) / RAND_MAX) * 2.0 - 1.0;
+                double y = ((double)rand_r(&semente) / RAND_MAX) * 2.0 - 1.0;
                 if (x*x + y*y <= 1.0)
-                    count++;
+                    contador++;
             }
         }
         
-        double end_time = omp_get_wtime();
-        double elapsed = end_time - start_time;
-        total_time += elapsed;
+        double tempo_fim = omp_get_wtime();
+        double tempo_decorrido = tempo_fim - tempo_inicio;
+        tempo_total += tempo_decorrido;
         
-        double pi = 4.0 * (double)count / (double)NUM_SAMPLES;
-        printf("Iteração %d: pi = %f, tempo = %f segundos\n", iter+1, pi, elapsed);
+        double pi = 4.0 * (double)contador / (double)NUM_AMOSTRAS;
+        printf("Iteração %d: pi = %f, tempo = %f segundos\n", iteracao + 1, pi, tempo_decorrido);
     }
     
-    printf("Tempo médio: %f segundos\n", total_time / NUM_ITER);
+    printf("Tempo médio: %f segundos\n", tempo_total / NUM_ITERACOES);
     return 0;
 }

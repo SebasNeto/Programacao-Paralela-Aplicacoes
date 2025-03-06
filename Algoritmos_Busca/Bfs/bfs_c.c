@@ -3,150 +3,150 @@
 #include <time.h>
 #include <unistd.h>
 
-#define AVG_DEGREE 10  // Grau médio desejado para o grafo
+#define GRAU_MEDIO 10  // Grau médio desejado para o grafo
 
 // Lista de tamanhos de vértices
-long sizes[] = {500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000};
-int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
+long tamanhos[] = {500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000};
+int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
 
 // Estrutura de cada nó (lista de adjacência)
 typedef struct {
-    int num_neighbors;
-    int capacity;
-    int *neighbors;
-} Node;
+    int num_vizinhos;
+    int capacidade;
+    int *vizinhos;
+} No;
 
 // Estrutura do grafo
 typedef struct {
     long num_vertices;
-    Node *nodes;
-} Graph;
+    No *nos;
+} Grafo;
 
 // Adiciona uma aresta (para grafo não direcionado, chame para ambos os nós)
-void add_edge(Graph *graph, long u, long v) {
-    Node *node = &graph->nodes[u];
-    if (node->num_neighbors == node->capacity) {
-        node->capacity = (node->capacity == 0) ? 4 : node->capacity * 2;
-        node->neighbors = realloc(node->neighbors, node->capacity * sizeof(int));
-        if (!node->neighbors) {
+void adicionar_aresta(Grafo *grafo, long u, long v) {
+    No *no = &grafo->nos[u];
+    if (no->num_vizinhos == no->capacidade) {
+        no->capacidade = (no->capacidade == 0) ? 4 : no->capacidade * 2;
+        no->vizinhos = realloc(no->vizinhos, no->capacidade * sizeof(int));
+        if (!no->vizinhos) {
             perror("Erro no realloc");
             exit(EXIT_FAILURE);
         }
     }
-    node->neighbors[node->num_neighbors++] = v;
+    no->vizinhos[no->num_vizinhos++] = v;
 }
 
-// Cria um grafo aleatório conectado com num_vertices e grau médio avg_degree
-Graph *create_graph(long num_vertices, int avg_degree) {
-    Graph *graph = malloc(sizeof(Graph));
-    graph->num_vertices = num_vertices;
-    graph->nodes = malloc(num_vertices * sizeof(Node));
-    if (!graph->nodes) {
-        perror("Erro ao alocar nodes");
+// Cria um grafo aleatório conectado com num_vertices e grau médio grau_medio
+Grafo *criar_grafo(long num_vertices, int grau_medio) {
+    Grafo *grafo = malloc(sizeof(Grafo));
+    grafo->num_vertices = num_vertices;
+    grafo->nos = malloc(num_vertices * sizeof(No));
+    if (!grafo->nos) {
+        perror("Erro ao alocar nós");
         exit(EXIT_FAILURE);
     }
     for (long i = 0; i < num_vertices; i++) {
-        graph->nodes[i].num_neighbors = 0;
-        graph->nodes[i].capacity = 0;
-        graph->nodes[i].neighbors = NULL;
+        grafo->nos[i].num_vizinhos = 0;
+        grafo->nos[i].capacidade = 0;
+        grafo->nos[i].vizinhos = NULL;
     }
     // Cria árvore geradora para garantir conectividade
     for (long i = 1; i < num_vertices; i++) {
-        long parent = rand() % i;
-        add_edge(graph, i, parent);
-        add_edge(graph, parent, i);
+        long pai = rand() % i;
+        adicionar_aresta(grafo, i, pai);
+        adicionar_aresta(grafo, pai, i);
     }
     // Adiciona arestas extras para atingir o grau médio desejado
-    long total_edges = (avg_degree * num_vertices) / 2;
-    long extra_edges = total_edges - (num_vertices - 1);
-    for (long i = 0; i < extra_edges; i++) {
+    long total_arestas = (grau_medio * num_vertices) / 2;
+    long arestas_extras = total_arestas - (num_vertices - 1);
+    for (long i = 0; i < arestas_extras; i++) {
         long u = rand() % num_vertices;
         long v = rand() % num_vertices;
         if (u == v) { i--; continue; }
-        add_edge(graph, u, v);
-        add_edge(graph, v, u);
+        adicionar_aresta(grafo, u, v);
+        adicionar_aresta(grafo, v, u);
     }
-    return graph;
+    return grafo;
 }
 
-void free_graph(Graph *graph) {
-    for (long i = 0; i < graph->num_vertices; i++) {
-        free(graph->nodes[i].neighbors);
+void liberar_grafo(Grafo *grafo) {
+    for (long i = 0; i < grafo->num_vertices; i++) {
+        free(grafo->nos[i].vizinhos);
     }
-    free(graph->nodes);
-    free(graph);
+    free(grafo->nos);
+    free(grafo);
 }
 
 //-------------------- FILA PARA BFS --------------------//
 typedef struct {
-    int *data;
-    long front;
-    long rear;
-    long capacity;
-} Queue;
+    int *dados;
+    long frente;
+    long tras;
+    long capacidade;
+} Fila;
 
-Queue *create_queue(long capacity) {
-    Queue *q = malloc(sizeof(Queue));
-    q->data = malloc(capacity * sizeof(int));
-    q->front = 0;
-    q->rear = 0;
-    q->capacity = capacity;
-    return q;
+Fila *criar_fila(long capacidade) {
+    Fila *f = malloc(sizeof(Fila));
+    f->dados = malloc(capacidade * sizeof(int));
+    f->frente = 0;
+    f->tras = 0;
+    f->capacidade = capacidade;
+    return f;
 }
 
-void free_queue(Queue *q) {
-    free(q->data);
-    free(q);
+void liberar_fila(Fila *f) {
+    free(f->dados);
+    free(f);
 }
 
-int is_empty(Queue *q) {
-    return (q->front == q->rear);
+int fila_vazia(Fila *f) {
+    return (f->frente == f->tras);
 }
 
-void enqueue(Queue *q, int val) {
-    if (q->rear == q->capacity) {
-        q->capacity *= 2;
-        q->data = realloc(q->data, q->capacity * sizeof(int));
-        if (!q->data) {
+void enfileirar(Fila *f, int valor) {
+    if (f->tras == f->capacidade) {
+        f->capacidade *= 2;
+        f->dados = realloc(f->dados, f->capacidade * sizeof(int));
+        if (!f->dados) {
             perror("Erro no realloc da fila");
             exit(EXIT_FAILURE);
         }
     }
-    q->data[q->rear++] = val;
+    f->dados[f->tras++] = valor;
 }
 
-int dequeue(Queue *q) {
-    return q->data[q->front++];
+int desenfileirar(Fila *f) {
+    return f->dados[f->frente++];
 }
 
 //-------------------- BFS SEQUENCIAL --------------------//
-void sequential_bfs(Graph *graph, int start, int *distance) {
-    long n = graph->num_vertices;
+void bfs_sequencial(Grafo *grafo, int inicio, int *distancia) {
+    long n = grafo->num_vertices;
     for (long i = 0; i < n; i++)
-        distance[i] = -1;
+        distancia[i] = -1;
     
-    Queue *q = create_queue(n);
-    distance[start] = 0;
-    enqueue(q, start);
+    Fila *f = criar_fila(n);
+    distancia[inicio] = 0;
+    enfileirar(f, inicio);
     
-    while (!is_empty(q)) {
-        int u = dequeue(q);
-        int d = distance[u];
-        Node *node = &graph->nodes[u];
-        for (int i = 0; i < node->num_neighbors; i++) {
-            int v = node->neighbors[i];
-            if (distance[v] == -1) {
-                distance[v] = d + 1;
-                enqueue(q, v);
+    while (!fila_vazia(f)) {
+        int u = desenfileirar(f);
+        int d = distancia[u];
+        No *no = &grafo->nos[u];
+        for (int i = 0; i < no->num_vizinhos; i++) {
+            int v = no->vizinhos[i];
+            if (distancia[v] == -1) {
+                distancia[v] = d + 1;
+                enfileirar(f, v);
             }
         }
     }
-    free_queue(q);
+    liberar_fila(f);
 }
 
 // Função para calcular a diferença de tempo (em segundos)
-double time_diff(struct timespec start, struct timespec end) {
-    return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+double diferenca_tempo(struct timespec inicio, struct timespec fim) {
+    return (fim.tv_sec - inicio.tv_sec) + (fim.tv_nsec - inicio.tv_nsec) / 1e9;
 }
 
 int main() {
@@ -155,30 +155,30 @@ int main() {
     double soma_tempos = 0.0;
     
     // Executa uma vez para cada tamanho do grafo
-    for (int s = 0; s < num_sizes; s++) {
-        long num_vertices = sizes[s];
+    for (int s = 0; s < num_tamanhos; s++) {
+        long num_vertices = tamanhos[s];
         printf("Tamanho do grafo: %ld vértices\n", num_vertices);
         
-        Graph *graph = create_graph(num_vertices, AVG_DEGREE);
-        int *distance = malloc(num_vertices * sizeof(int));
-        if (!distance) {
-            perror("Erro ao alocar vetor distance");
+        Grafo *grafo = criar_grafo(num_vertices, GRAU_MEDIO);
+        int *distancia = malloc(num_vertices * sizeof(int));
+        if (!distancia) {
+            perror("Erro ao alocar vetor de distância");
             exit(EXIT_FAILURE);
         }
         
-        struct timespec start, end;
-        clock_gettime(CLOCK_MONOTONIC, &start);
-        sequential_bfs(graph, 0, distance);
-        clock_gettime(CLOCK_MONOTONIC, &end);
-        double t = time_diff(start, end);
-        soma_tempos += t;
-        printf("  Tempo: %f segundos\n\n", t);
+        struct timespec inicio, fim;
+        clock_gettime(CLOCK_MONOTONIC, &inicio);
+        bfs_sequencial(grafo, 0, distancia);
+        clock_gettime(CLOCK_MONOTONIC, &fim);
+        double tempo = diferenca_tempo(inicio, fim);
+        soma_tempos += tempo;
+        printf("  Tempo: %f segundos\n\n", tempo);
         
-        free(distance);
-        free_graph(graph);
+        free(distancia);
+        liberar_grafo(grafo);
     }
     
-    double media_geral = soma_tempos / num_sizes;
+    double media_geral = soma_tempos / num_tamanhos;
     printf("Tempo médio geral (Sequencial): %f segundos\n", media_geral);
     
     return 0;

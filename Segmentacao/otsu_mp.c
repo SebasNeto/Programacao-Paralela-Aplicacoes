@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <opencv2/opencv.hpp>
 
-#define MAX_CINZA 255
+#define MAX_NIVEL_CINZA 255
 
 const char* DIRETORIO_ENTRADA = "/mnt/c/Users/bicha/Documents/Imagens_Selecionadas";
 const char* DIRETORIO_SAIDA   = "/mnt/c/Users/bicha/Documents/Saida_otsu";
@@ -15,80 +15,80 @@ const char* DIRETORIO_SAIDA   = "/mnt/c/Users/bicha/Documents/Saida_otsu";
 //----------------------------------------------------------
 // Função para calcular o limiar de Otsu com OpenMP
 //----------------------------------------------------------
-int calcularLimiarOtsuParalelo(const uint8_t* dadosImagem, int largura, int altura) {
-    int totalPixeis = largura * altura;
+int calcular_limiar_otsu_paralelo(const uint8_t* dados_imagem, int largura, int altura) {
+    int total_pix = largura * altura;
     int histograma[256] = {0};
 
     // Paraleliza o cálculo do histograma
     #pragma omp parallel
     {
-        int hist_local[256] = {0};
+        int histograma_local[256] = {0};
         #pragma omp for nowait
-        for (int i = 0; i < totalPixeis; i++) {
-            hist_local[dadosImagem[i]]++;
+        for (int i = 0; i < total_pix; i++) {
+            histograma_local[dados_imagem[i]]++;
         }
         #pragma omp critical
         {
             for (int i = 0; i < 256; i++) {
-                histograma[i] += hist_local[i];
+                histograma[i] += histograma_local[i];
             }
         }
     }
 
     // Cálculo dos vetores cumulativos
-    int cumWeight[256] = {0};
-    long long cumSum[256] = {0};
-    cumWeight[0] = histograma[0];
-    cumSum[0] = 0;
+    int peso_cumulativo[256] = {0};
+    long long soma_cumulativa[256] = {0};
+    peso_cumulativo[0] = histograma[0];
+    soma_cumulativa[0] = 0;
     for (int i = 1; i < 256; i++) {
-        cumWeight[i] = cumWeight[i - 1] + histograma[i];
-        cumSum[i] = cumSum[i - 1] + i * (long long)histograma[i];
+        peso_cumulativo[i] = peso_cumulativo[i - 1] + histograma[i];
+        soma_cumulativa[i] = soma_cumulativa[i - 1] + i * (long long)histograma[i];
     }
-    double totalSum = cumSum[255];
+    double soma_total = soma_cumulativa[255];
 
     // Busca do limiar ideal
-    double maxVariance = 0.0;
-    int threshold = 0;
+    double variancia_maxima = 0.0;
+    int limiar = 0;
     
-    #pragma omp parallel for reduction(max:maxVariance) reduction(+:threshold)
+    #pragma omp parallel for reduction(max:variancia_maxima) reduction(+:limiar)
     for (int t = 0; t < 256; t++) {
-        int weightB = cumWeight[t];
-        int weightF = totalPixeis - weightB;
+        int peso_fundo = peso_cumulativo[t];
+        int peso_objeto = total_pix - peso_fundo;
         
-        if (weightB == 0 || weightF == 0) continue;
+        if (peso_fundo == 0 || peso_objeto == 0) continue;
 
-        double meanB = (double) cumSum[t] / weightB;
-        double meanF = (double)(totalSum - cumSum[t]) / weightF;
-        double variance = weightB * weightF * (meanB - meanF) * (meanB - meanF);
+        double media_fundo = (double) soma_cumulativa[t] / peso_fundo;
+        double media_objeto = (double)(soma_total - soma_cumulativa[t]) / peso_objeto;
+        double variancia = peso_fundo * peso_objeto * (media_fundo - media_objeto) * (media_fundo - media_objeto);
         
-        if (variance > maxVariance) {
-            maxVariance = variance;
-            threshold = t;
+        if (variancia > variancia_maxima) {
+            variancia_maxima = variancia;
+            limiar = t;
         }
     }
-    return threshold;
+    return limiar;
 }
 
 //----------------------------------------------------------
-// Função para aplicar a limiarização em OpenMP
+// Função para aplicar a limiarização com OpenMP
 //----------------------------------------------------------
-void aplicarLimiarizacao(const uint8_t* entrada, uint8_t* saida, int totalPixeis, int limiar) {
+void aplicar_limiarizacao(const uint8_t* imagem_entrada, uint8_t* imagem_saida, int total_pix, int limiar) {
     #pragma omp parallel for simd
-    for (int i = 0; i < totalPixeis; i++) {
-        saida[i] = (entrada[i] > limiar) ? MAX_CINZA : 0;
+    for (int i = 0; i < total_pix; i++) {
+        imagem_saida[i] = (imagem_entrada[i] > limiar) ? MAX_NIVEL_CINZA : 0;
     }
 }
 
 //----------------------------------------------------------
 // Função para processar uma única imagem e medir o tempo
 //----------------------------------------------------------
-double processarImagem(const char* caminhoEntrada, const char* caminhoSaida) {
+double processar_imagem(const char* caminho_entrada, const char* caminho_saida) {
     double inicio = omp_get_wtime();
 
     // Carrega a imagem em escala de cinza
-    cv::Mat imagem = cv::imread(caminhoEntrada, cv::IMREAD_GRAYSCALE);
+    cv::Mat imagem = cv::imread(caminho_entrada, cv::IMREAD_GRAYSCALE);
     if (imagem.empty()) {
-        fprintf(stderr, "Erro ao carregar a imagem: %s\n", caminhoEntrada);
+        fprintf(stderr, "Erro ao carregar a imagem: %s\n", caminho_entrada);
         return 0.0;
     }
 
@@ -96,32 +96,32 @@ double processarImagem(const char* caminhoEntrada, const char* caminhoSaida) {
     int altura = imagem.rows;
 
     // Calcula o limiar de Otsu paralelamente
-    int limiarOtsu = calcularLimiarOtsuParalelo(imagem.data, largura, altura);
+    int limiar_otsu = calcular_limiar_otsu_paralelo(imagem.data, largura, altura);
 
     // Cria a imagem segmentada e aplica a limiarização
-    cv::Mat imagemSegmentada(altura, largura, CV_8UC1);
-    aplicarLimiarizacao(imagem.data, imagemSegmentada.data, largura * altura, limiarOtsu);
+    cv::Mat imagem_segmentada(altura, largura, CV_8UC1);
+    aplicar_limiarizacao(imagem.data, imagem_segmentada.data, largura * altura, limiar_otsu);
 
     // Salva a imagem segmentada
-    cv::imwrite(caminhoSaida, imagemSegmentada);
+    cv::imwrite(caminho_saida, imagem_segmentada);
 
     double tempo_execucao = (omp_get_wtime() - inicio) * 1000.0; // Tempo em milissegundos
-    printf("Imagem %s processada em %.4f ms\n", caminhoEntrada, tempo_execucao);
+    printf("Imagem %s processada em %.4f ms\n", caminho_entrada, tempo_execucao);
     return tempo_execucao;
 }
 
 //----------------------------------------------------------
-// Função para processar todas as imagens do diretório (cópia do seu código base)
+// Função para processar todas as imagens do diretório
 //----------------------------------------------------------
-void processarDiretorio(const char* diretorioEntrada, const char* diretorioSaida) {
+void processar_diretorio(const char* diretorio_entrada, const char* diretorio_saida) {
     struct dirent *entrada;
-    DIR *dp = opendir(diretorioEntrada);
+    DIR *dp = opendir(diretorio_entrada);
     if (dp == NULL) {
-        fprintf(stderr, "Erro ao acessar o diretório: %s\n", diretorioEntrada);
+        fprintf(stderr, "Erro ao acessar o diretório: %s\n", diretorio_entrada);
         return;
     }
     struct stat st;
-    mkdir(diretorioSaida, 0777); // Cria diretório de saída se não existir
+    mkdir(diretorio_saida, 0777); // Cria diretório de saída se não existir
 
     double tempo_total = 0.0;
     int num_imagens = 0;
@@ -129,10 +129,10 @@ void processarDiretorio(const char* diretorioEntrada, const char* diretorioSaida
     while ((entrada = readdir(dp))) {
         std::string nome = entrada->d_name;
         if (nome == "." || nome == "..") continue;
-        std::string caminhoEntrada = std::string(diretorioEntrada) + "/" + nome;
-        if (stat(caminhoEntrada.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
-            std::string caminhoSaida = std::string(diretorioSaida) + "/" + nome;
-            double tempo = processarImagem(caminhoEntrada.c_str(), caminhoSaida.c_str());
+        std::string caminho_entrada = std::string(diretorio_entrada) + "/" + nome;
+        if (stat(caminho_entrada.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
+            std::string caminho_saida = std::string(diretorio_saida) + "/" + nome;
+            double tempo = processar_imagem(caminho_entrada.c_str(), caminho_saida.c_str());
             tempo_total += tempo;
             num_imagens++;
         }
@@ -140,8 +140,8 @@ void processarDiretorio(const char* diretorioEntrada, const char* diretorioSaida
     closedir(dp);
 
     if (num_imagens > 0) {
-        double media = tempo_total / num_imagens;
-        printf("\nTempo médio por imagem: %.4f ms\n", media);
+        double tempo_medio = tempo_total / num_imagens;
+        printf("\nTempo médio por imagem: %.4f ms\n", tempo_medio);
     } else {
         printf("\nNenhuma imagem foi processada.\n");
     }
@@ -152,6 +152,6 @@ void processarDiretorio(const char* diretorioEntrada, const char* diretorioSaida
 //----------------------------------------------------------
 int main() {
     printf("Iniciando processamento com %d threads...\n", omp_get_max_threads());
-    processarDiretorio(DIRETORIO_ENTRADA, DIRETORIO_SAIDA);
+    processar_diretorio(DIRETORIO_ENTRADA, DIRETORIO_SAIDA);
     return 0;
 }

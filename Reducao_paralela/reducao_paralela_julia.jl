@@ -1,52 +1,52 @@
 using Base.Threads
-#correct
-const NUM_ITER = 10
-const array_sizes = [10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000,
-                     60_000_000, 70_000_000, 80_000_000, 90_000_000, 100_000_000]
 
-global total_dummy = 0
+const NUM_ITERACOES = 10
+const tamanhos_array = [10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000,
+                        60_000_000, 70_000_000, 80_000_000, 90_000_000, 100_000_000]
 
-# Função otimizada para redução paralela com chunking, @inbounds e @simd
-function fast_parallel_sum(arr::Vector{Int})
-    nt = nthreads()
-    partials = zeros(Int, nt)
+global soma_dummy = 0
+
+# Função otimizada para redução paralela com divisão de blocos, @inbounds e @simd
+function soma_paralela_rapida(arr::Vector{Int})
+    num_threads = nthreads()
+    somas_parciais = zeros(Int, num_threads)
     n = length(arr)
-    chunk = div(n, nt)
-    remainder = mod(n, nt)
-    @threads for tid in 1:nt
+    bloco = div(n, num_threads)
+    resto = mod(n, num_threads)
+    @threads for id_thread in 1:num_threads
         # Calcula os índices de início e fim para cada thread
-        start_index = (tid - 1) * chunk + min(tid - 1, remainder) + 1
-        end_index = tid * chunk + min(tid, remainder)
-        local_sum = 0
-        @inbounds @simd for i in start_index:end_index
-            local_sum += arr[i]
+        indice_inicio = (id_thread - 1) * bloco + min(id_thread - 1, resto) + 1
+        indice_fim = id_thread * bloco + min(id_thread, resto)
+        soma_local = 0
+        @inbounds @simd for i in indice_inicio:indice_fim
+            soma_local += arr[i]
         end
-        partials[tid] = local_sum
+        somas_parciais[id_thread] = soma_local
     end
-    return sum(partials)
+    return sum(somas_parciais)
 end
 
-function run_benchmark()
-    total_time = 0.0
-    for n in array_sizes
+function executar_benchmark()
+    tempo_total = 0.0
+    for tamanho in tamanhos_array
         # Cria um vetor com inteiros aleatórios entre 0 e 9
-        arr = rand(0:9, n)
-        time_sum = 0.0
-        for iter in 1:NUM_ITER
-            t_start = time_ns()
-            s = fast_parallel_sum(arr)
-            t_end = time_ns()
-            elapsed = (t_end - t_start) / 1e9  # converte nanosegundos para segundos
-            time_sum += elapsed
-            global total_dummy += s
+        arr = rand(0:9, tamanho)
+        soma_tempos = 0.0
+        for iteracao in 1:NUM_ITERACOES
+            tempo_inicio = time_ns()
+            s = soma_paralela_rapida(arr)
+            tempo_fim = time_ns()
+            tempo_decorrido = (tempo_fim - tempo_inicio) / 1e9  # converte nanosegundos para segundos
+            soma_tempos += tempo_decorrido
+            global soma_dummy += s
         end
-        avg_time = time_sum / NUM_ITER
-        total_time += avg_time
-        println("Tamanho do vetor: $n -> Tempo médio: $(avg_time) segundos")
+        tempo_medio = soma_tempos / NUM_ITERACOES
+        tempo_total += tempo_medio
+        println("Tamanho do vetor: $tamanho -> Tempo médio: $(tempo_medio) segundos")
     end
-    avg_total_time = total_time / length(array_sizes)
-    println("\nTempo médio geral: $(avg_total_time) segundos")
-    println("Soma total (dummy): $total_dummy")
+    tempo_medio_total = tempo_total / length(tamanhos_array)
+    println("\nTempo médio geral: $(tempo_medio_total) segundos")
+    println("Soma total (dummy): $soma_dummy")
 end
 
-run_benchmark()
+executar_benchmark()

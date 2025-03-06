@@ -4,206 +4,189 @@
 #include <time.h>
 #include <unistd.h>
 
-#define AVG_DEGREE 10  /
+#define GRAU_MEDIO 10
 
-long sizes[] = {500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000};
-int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
+long tamanhos[] = {500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000};
+int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
 
 // Estrutura de cada nó (lista de adjacência)
 typedef struct {
-    int num_neighbors;
-    int capacity;
-    int *neighbors;
-} Node;
+    int num_vizinhos;
+    int capacidade;
+    int *vizinhos;
+} No;
 
 // Estrutura do grafo
 typedef struct {
     long num_vertices;
-    Node *nodes;
-} Graph;
+    No *nos;
+} Grafo;
 
 // Função para adicionar aresta (grafo não direcionado)
-void add_edge(Graph *graph, long u, long v) {
-    Node *node = &graph->nodes[u];
-    if (node->num_neighbors == node->capacity) {
-        node->capacity = (node->capacity == 0) ? 4 : node->capacity * 2;
-        node->neighbors = realloc(node->neighbors, node->capacity * sizeof(int));
-        if (!node->neighbors) {
+void adicionar_aresta(Grafo *grafo, long u, long v) {
+    No *no = &grafo->nos[u];
+    if (no->num_vizinhos == no->capacidade) {
+        no->capacidade = (no->capacidade == 0) ? 4 : no->capacidade * 2;
+        no->vizinhos = realloc(no->vizinhos, no->capacidade * sizeof(int));
+        if (!no->vizinhos) {
             perror("Erro no realloc");
             exit(EXIT_FAILURE);
         }
     }
-    node->neighbors[node->num_neighbors++] = v;
+    no->vizinhos[no->num_vizinhos++] = v;
 }
 
-// Cria grafo aleatório conectado com num_vertices e grau médio avg_degree
-Graph *create_graph(long num_vertices, int avg_degree) {
-    Graph *graph = malloc(sizeof(Graph));
-    graph->num_vertices = num_vertices;
-    graph->nodes = malloc(num_vertices * sizeof(Node));
-    if (!graph->nodes) {
-        perror("Erro ao alocar nodes");
+// Cria grafo aleatório conectado com num_vertices e grau médio grau_medio
+Grafo *criar_grafo(long num_vertices, int grau_medio) {
+    Grafo *grafo = malloc(sizeof(Grafo));
+    grafo->num_vertices = num_vertices;
+    grafo->nos = malloc(num_vertices * sizeof(No));
+    if (!grafo->nos) {
+        perror("Erro ao alocar nós");
         exit(EXIT_FAILURE);
     }
     for (long i = 0; i < num_vertices; i++) {
-        graph->nodes[i].num_neighbors = 0;
-        graph->nodes[i].capacity = 0;
-        graph->nodes[i].neighbors = NULL;
+        grafo->nos[i].num_vizinhos = 0;
+        grafo->nos[i].capacidade = 0;
+        grafo->nos[i].vizinhos = NULL;
     }
     // Cria árvore geradora para garantir conectividade
     for (long i = 1; i < num_vertices; i++) {
-        long parent = rand() % i;
-        add_edge(graph, i, parent);
-        add_edge(graph, parent, i);
+        long pai = rand() % i;
+        adicionar_aresta(grafo, i, pai);
+        adicionar_aresta(grafo, pai, i);
     }
     // Adiciona arestas extras para atingir o grau médio desejado
-    long total_edges = (avg_degree * num_vertices) / 2;
-    long extra_edges = total_edges - (num_vertices - 1);
-    for (long i = 0; i < extra_edges; i++) {
+    long total_arestas = (grau_medio * num_vertices) / 2;
+    long arestas_extras = total_arestas - (num_vertices - 1);
+    for (long i = 0; i < arestas_extras; i++) {
         long u = rand() % num_vertices;
         long v = rand() % num_vertices;
         if (u == v) { i--; continue; }
-        add_edge(graph, u, v);
-        add_edge(graph, v, u);
+        adicionar_aresta(grafo, u, v);
+        adicionar_aresta(grafo, v, u);
     }
-    return graph;
+    return grafo;
 }
 
-void free_graph(Graph *graph) {
-    for (long i = 0; i < graph->num_vertices; i++) {
-        free(graph->nodes[i].neighbors);
+void liberar_grafo(Grafo *grafo) {
+    for (long i = 0; i < grafo->num_vertices; i++) {
+        free(grafo->nos[i].vizinhos);
     }
-    free(graph->nodes);
-    free(graph);
+    free(grafo->nos);
+    free(grafo);
 }
 
-//-------------------- VARIÁVEIS GLOBAIS PARA BFS PARARELO --------------------//
-Graph *global_graph;
-int *global_distance;
-int *global_frontier;       // Vetor com os nós do nível atual
-int *global_next_frontier;  // Vetor para construir o próximo nível
-volatile int global_frontier_size;
-volatile int next_frontier_counter;
-volatile int global_level;
+//-------------------- VARIÁVEIS GLOBAIS PARA BFS PARALELO --------------------//
+Grafo *grafo_global;
+int *distancia_global;
+int *fronteira_global;
+int *proxima_fronteira_global;
+volatile int tamanho_fronteira_global;
+volatile int contador_proxima_fronteira;
+volatile int nivel_global;
 int num_threads;
 
-pthread_barrier_t barrier;
+pthread_barrier_t barreira;
 
 //-------------------- FUNÇÃO EXECUTADA POR CADA THREAD --------------------//
 void *bfs_thread(void *arg) {
-    int tid = *(int *)arg;
-    while (global_frontier_size > 0) {
-        // Cada thread processa os índices com stride = num_threads
-        for (int i = tid; i < global_frontier_size; i += num_threads) {
-            int u = global_frontier[i];
-            int d = global_level;
-            Node *node = &global_graph->nodes[u];
-            for (int j = 0; j < node->num_neighbors; j++) {
-                int v = node->neighbors[j];
-                // Se o nó não foi visitado, tenta marcar atômicamente
-                if (global_distance[v] == -1) {
-                    if (__sync_bool_compare_and_swap(&(global_distance[v]), -1, d + 1)) {
-                        int index = __sync_fetch_and_add(&next_frontier_counter, 1);
-                        global_next_frontier[index] = v;
+    int id = *(int *)arg;
+    while (tamanho_fronteira_global > 0) {
+        for (int i = id; i < tamanho_fronteira_global; i += num_threads) {
+            int u = fronteira_global[i];
+            int d = nivel_global;
+            No *no = &grafo_global->nos[u];
+            for (int j = 0; j < no->num_vizinhos; j++) {
+                int v = no->vizinhos[j];
+                if (distancia_global[v] == -1) {
+                    if (__sync_bool_compare_and_swap(&(distancia_global[v]), -1, d + 1)) {
+                        int indice = __sync_fetch_and_add(&contador_proxima_fronteira, 1);
+                        proxima_fronteira_global[indice] = v;
                     }
                 }
             }
         }
-        // Espera todos as threads terminarem o processamento do nível atual
-        pthread_barrier_wait(&barrier);
-
-        // Apenas uma thread (por exemplo, tid 0) prepara o próximo nível
-        if (tid == 0) {
-            global_frontier_size = next_frontier_counter;
-            // Troca os vetores de fronteira
-            int *temp = global_frontier;
-            global_frontier = global_next_frontier;
-            global_next_frontier = temp;
-            next_frontier_counter = 0;
-            global_level++;
+        pthread_barrier_wait(&barreira);
+        if (id == 0) {
+            tamanho_fronteira_global = contador_proxima_fronteira;
+            int *temp = fronteira_global;
+            fronteira_global = proxima_fronteira_global;
+            proxima_fronteira_global = temp;
+            contador_proxima_fronteira = 0;
+            nivel_global++;
         }
-        // Sincroniza para garantir que a troca já ocorreu
-        pthread_barrier_wait(&barrier);
+        pthread_barrier_wait(&barreira);
     }
     return NULL;
 }
 
 //-------------------- FUNÇÃO PARA CALCULAR A DIFERENÇA DE TEMPO --------------------//
-double time_diff(struct timespec start, struct timespec end) {
-    return (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+double diferenca_tempo(struct timespec inicio, struct timespec fim) {
+    return (fim.tv_sec - inicio.tv_sec) + (fim.tv_nsec - inicio.tv_nsec) / 1e9;
 }
 
-//-------------------- FUNÇÃO BFS PARARELO MELHORADA --------------------//
-void improved_parallel_bfs(Graph *graph, int start) {
-    long n = graph->num_vertices;
-    // Inicializa o vetor de distâncias
+//-------------------- FUNÇÃO BFS PARALELO MELHORADA --------------------//
+void bfs_paralelo_melhorado(Grafo *grafo, int inicio) {
+    long n = grafo->num_vertices;
     for (long i = 0; i < n; i++)
-        global_distance[i] = -1;
-    global_distance[start] = 0;
+        distancia_global[i] = -1;
+    distancia_global[inicio] = 0;
 
-    // Inicializa a fronteira com o nó de partida
-    global_frontier[0] = start;
-    global_frontier_size = 1;
-    next_frontier_counter = 0;
-    global_level = 0;
+    fronteira_global[0] = inicio;
+    tamanho_fronteira_global = 1;
+    contador_proxima_fronteira = 0;
+    nivel_global = 0;
 
-    // Cria as threads (elas serão criadas apenas uma vez)
     pthread_t *threads = malloc(num_threads * sizeof(pthread_t));
-    int *thread_ids = malloc(num_threads * sizeof(int));
+    int *ids_threads = malloc(num_threads * sizeof(int));
     for (int t = 0; t < num_threads; t++) {
-        thread_ids[t] = t;
-        pthread_create(&threads[t], NULL, bfs_thread, &thread_ids[t]);
+        ids_threads[t] = t;
+        pthread_create(&threads[t], NULL, bfs_thread, &ids_threads[t]);
     }
-    // A thread principal aguarda as threads terminarem (quando o frontier acabar)
     for (int t = 0; t < num_threads; t++) {
         pthread_join(threads[t], NULL);
     }
     free(threads);
-    free(thread_ids);
+    free(ids_threads);
 }
 
 int main() {
     srand(time(NULL));
 
-    // Para cada tamanho de grafo, executa o BFS e acumula o tempo
     double soma_tempos = 0.0;
-    for (int s = 0; s < num_sizes; s++) {
-        long num_vertices = sizes[s];
+    for (int s = 0; s < num_tamanhos; s++) {
+        long num_vertices = tamanhos[s];
         printf("Tamanho do grafo: %ld vértices\n", num_vertices);
-        Graph *graph = create_graph(num_vertices, AVG_DEGREE);
+        Grafo *grafo = criar_grafo(num_vertices, GRAU_MEDIO);
 
-        // Aloca memória para variáveis globais
-        global_graph = graph;
-        global_distance = malloc(num_vertices * sizeof(int));
-        // Para as fronteiras, alocamos espaço para até num_vertices nós
-        global_frontier = malloc(num_vertices * sizeof(int));
-        global_next_frontier = malloc(num_vertices * sizeof(int));
+        grafo_global = grafo;
+        distancia_global = malloc(num_vertices * sizeof(int));
+        fronteira_global = malloc(num_vertices * sizeof(int));
+        proxima_fronteira_global = malloc(num_vertices * sizeof(int));
 
-        // Define o número de threads com base no número de processadores disponíveis
         num_threads = sysconf(_SC_NPROCESSORS_ONLN);
         if (num_threads < 1) num_threads = 1;
-        // Inicializa a barreira para sincronização das threads
-        pthread_barrier_init(&barrier, NULL, num_threads);
+        pthread_barrier_init(&barreira, NULL, num_threads);
 
-        struct timespec start_time, end_time;
-        clock_gettime(CLOCK_MONOTONIC, &start_time);
-        improved_parallel_bfs(graph, 0);
-        clock_gettime(CLOCK_MONOTONIC, &end_time);
+        struct timespec tempo_inicio, tempo_fim;
+        clock_gettime(CLOCK_MONOTONIC, &tempo_inicio);
+        bfs_paralelo_melhorado(grafo, 0);
+        clock_gettime(CLOCK_MONOTONIC, &tempo_fim);
 
-        double t = time_diff(start_time, end_time);
-        soma_tempos += t;
-        printf("  Tempo: %f segundos\n\n", t);
+        double tempo = diferenca_tempo(tempo_inicio, tempo_fim);
+        soma_tempos += tempo;
+        printf("  Tempo: %f segundos\n\n", tempo);
 
-        // Libera memória
-        free(global_distance);
-        free(global_frontier);
-        free(global_next_frontier);
-        pthread_barrier_destroy(&barrier);
-        free_graph(graph);
+        free(distancia_global);
+        free(fronteira_global);
+        free(proxima_fronteira_global);
+        pthread_barrier_destroy(&barreira);
+        liberar_grafo(grafo);
     }
 
-    double media_geral = soma_tempos / num_sizes;
-    printf("Tempo médio geral (Paralelo Melhorado): %f segundos\n", media_geral);
+    double media_geral = soma_tempos / num_tamanhos;
+    printf("Tempo médio geral (BFS Paralelo Melhorado): %f segundos\n", media_geral);
 
     return 0;
 }
