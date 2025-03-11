@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <omp.h>
+#include <fstream>
 
 namespace fs = std::filesystem;
 using namespace Halide;

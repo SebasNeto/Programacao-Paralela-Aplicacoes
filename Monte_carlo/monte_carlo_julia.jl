@@ -1,7 +1,12 @@
 using Random, Statistics, Base.Threads
 
-const NUM_ITERACOES = 10
-const NUM_AMOSTRAS = 100_000_000  # Número total de amostras por iteração
+const NUM_ITERACOES = 1
+
+# Lista de tamanhos de amostras
+tamanhos_amostras = [
+    10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000,
+    60_000_000, 70_000_000, 80_000_000, 90_000_000, 100_000_000
+]
 
 # Função que processa um número específico de amostras usando um gerador RNG fornecido
 function monte_carlo_pi_thread(amostras::Int, rng::AbstractRNG)
@@ -34,18 +39,22 @@ function monte_carlo_pi_paralelo(total_amostras::Int)
     return 4.0 * total_contador / total_amostras
 end
 
-# Função principal que executa várias iterações, mede o tempo e calcula a média
+# Função principal que executa várias iterações, mede o tempo e calcula a média para cada tamanho de amostra
 function principal()
-    tempos = Float64[]
-    for iteracao in 1:NUM_ITERACOES
-        inicio_tempo = time()
-        pi_estimado = monte_carlo_pi_paralelo(NUM_AMOSTRAS)
-        fim_tempo = time()
-        tempo_decorrido = fim_tempo - inicio_tempo
-        push!(tempos, tempo_decorrido)
-        println("Iteração $iteracao: pi = $pi_estimado, tempo = $(tempo_decorrido) segundos")
+    for num_amostras in tamanhos_amostras
+        tempos = Float64[]
+        println("\nTamanho da amostra: $num_amostras")
+        for iteracao in 1:NUM_ITERACOES
+            inicio_tempo = time()
+            pi_estimado = monte_carlo_pi_paralelo(num_amostras)
+            fim_tempo = time()
+            tempo_decorrido = fim_tempo - inicio_tempo
+            push!(tempos, tempo_decorrido)
+            println("Iteração $iteracao: pi = $pi_estimado, tempo = $(tempo_decorrido) segundos")
+        end
+        println("Tempo médio para amostra $num_amostras: $(mean(tempos)) segundos")
     end
-    println("Tempo médio: $(mean(tempos)) segundos")
 end
 
 principal()
+
