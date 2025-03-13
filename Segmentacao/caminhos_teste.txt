@@ -16,7 +16,7 @@ g++ -o testethreads otsu_thread.c -pthread `pkg-config --cflags --libs opencv4`
 
 ou
 
-gcc -O3 -march=native -pthread -o otsu_thread otsu_thread.c
+gcc -O3 -march=native -pthread `pkg-config --cflags --libs opencv4` -o otsu_thread otsu_thread.c
 
 extra - ordenação de imagens
 g++ -std=c++17 -fopenmp -I"/mnt/c/Users/bicha/Downloads/Halide_linux/Halide-19.0.0-x86-64-linux/include" -I"/mnt/c/Users/bicha/Downloads/Halide_linux/Halide-19.0.0-x86-64-linux/share/Halide/tools" -L"/mnt/c/Users/bicha/Downloads/Halide_linux/Halide-19.0.0-x86-64-linux/lib" ordenar_imagens.cpp `pkg-config --cflags --libs opencv4` -lHalide -o ordenar_imagens

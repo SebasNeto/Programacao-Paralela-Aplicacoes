@@ -9,7 +9,7 @@
 #include <opencv2/opencv.hpp>
 
 #define MAX_NIVEL_CINZA 255
-#define NUM_THREADS 4  // Ajuste conforme necessário
+#define NUM_THREADS 16  // Ajuste conforme necessário
 
 const char* DIRETORIO_ENTRADA = "/mnt/c/Users/bicha/Documents/Imagens_Selecionadas";
 const char* DIRETORIO_SAIDA   = "/mnt/c/Users/bicha/Documents/Saida_otsu";
