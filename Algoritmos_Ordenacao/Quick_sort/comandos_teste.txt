@@ -1,5 +1,5 @@
 versão sequencial:
-gcc quick_sort_sequencial.c -o testequicksequencial
+gcc quick_sort_tradicional.c -o testequicksequencial
 
 versão openmp:
 export OMP_NUM_THREADS=16

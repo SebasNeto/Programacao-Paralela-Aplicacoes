@@ -4,158 +4,173 @@
 #include <pthread.h>
 
 #define MAX_THREADS 16   // Número máximo de threads ativas
-#define MIN_SIZE    10000  // Tamanho mínimo do subarray para criar nova thread
+#define MIN_SIZE    10000 // Tamanho mínimo do subarray para criar nova thread
 
 typedef struct {
-    int *vetor;
-    int baixo;
-    int alto;
+    int *array;
+    int low;
+    int high;
 } ThreadArgs;
 
 pthread_mutex_t thread_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 int current_threads = 0;  // Número atual de threads criadas
 
-// Função de partição (Lomuto)
-int particionar(int *vetor, int baixo, int alto) {
-    int pivo = vetor[alto];
-    int i = baixo - 1;
-    for (int j = baixo; j < alto; j++) {
-        if (vetor[j] < pivo) {
-            i++;
-            int temp = vetor[i];
-            vetor[i] = vetor[j];
-            vetor[j] = temp;
+// Função para trocar valores
+void swap(int *a, int *b) {
+    int temp = *a;
+    *a = *b;
+    *b = temp;
+}
+
+// Seleção do pivô usando median-of-three
+int median_of_three(int *array, int low, int high) {
+    int mid = low + (high - low) / 2;
+    if (array[low] > array[mid])
+        swap(&array[low], &array[mid]);
+    if (array[low] > array[high])
+        swap(&array[low], &array[high]);
+    if (array[mid] > array[high])
+        swap(&array[mid], &array[high]);
+    // Coloca o pivô em high-1
+    swap(&array[mid], &array[high - 1]);
+    return array[high - 1];
+}
+
+// Função de partição utilizando median-of-three quando possível
+int partition(int *array, int low, int high) {
+    // Se o subarray for muito pequeno, utiliza o último elemento como pivô
+    if (high - low < 3) {
+        int pivot = array[high];
+        int i = low - 1;
+        for (int j = low; j < high; j++) {
+            if (array[j] < pivot) {
+                i++;
+                swap(&array[i], &array[j]);
+            }
+        }
+        swap(&array[i + 1], &array[high]);
+        return i + 1;
+    }
+    
+    int pivot = median_of_three(array, low, high);
+    int i = low;
+    int j = high - 1;
+    while (1) {
+        while (array[++i] < pivot) {}
+        while (array[--j] > pivot) {}
+        if (i < j)
+            swap(&array[i], &array[j]);
+        else
+            break;
+    }
+    swap(&array[i], &array[high - 1]); // Restaura o pivô
+    return i;
+}
+
+// Quicksort sequencial com eliminação de recursão de cauda
+void quicksort_sequential(int *array, int low, int high) {
+    while (low < high) {
+        // Se o subarray for pequeno, processa de forma sequencial
+        if (high - low < MIN_SIZE) {
+            int pi = partition(array, low, high);
+            quicksort_sequential(array, low, pi - 1);
+            low = pi + 1;
+        } else {
+            int pi = partition(array, low, high);
+            quicksort_sequential(array, low, pi - 1);
+            low = pi + 1;
         }
     }
-    int temp = vetor[i + 1];
-    vetor[i + 1] = vetor[alto];
-    vetor[alto] = temp;
-    return i + 1;
 }
 
-// Versão sequencial do quicksort
-void quicksort_sequencial(int *vetor, int baixo, int alto) {
-    if (baixo < alto) {
-        int pi = particionar(vetor, baixo, alto);
-        quicksort_sequencial(vetor, baixo, pi - 1);
-        quicksort_sequencial(vetor, pi + 1, alto);
-    }
-}
-
-// Função executada pelas threads
+// Função executada pelas threads: utiliza paralelismo com spawn único
 void *quicksort_thread(void *arg) {
     ThreadArgs *args = (ThreadArgs *)arg;
-    int baixo = args->baixo;
-    int alto = args->alto;
-    int *vetor = args->vetor;
-    free(args); // Libera a memória dos argumentos
+    int low = args->low;
+    int high = args->high;
+    int *array = args->array;
+    free(args); // Libera os argumentos
 
-    if (baixo < alto) {
-        // Se o subarray for pequeno, use o quicksort sequencial
-        if ((alto - baixo) < MIN_SIZE) {
-            quicksort_sequencial(vetor, baixo, alto);
-            return NULL;
+    while (low < high) {
+        // Se o subarray for pequeno, utiliza o quicksort sequencial
+        if (high - low < MIN_SIZE) {
+            quicksort_sequential(array, low, high);
+            break;
         }
         
-        int pi = particionar(vetor, baixo, alto);
-        pthread_t thread_esq = 0, thread_dir = 0;
-        int criar_esq = 0, criar_dir = 0;
-
-        // Prepara os argumentos para as partições esquerda e direita
-        ThreadArgs *args_esq = malloc(sizeof(ThreadArgs));
-        args_esq->vetor = vetor;
-        args_esq->baixo = baixo;
-        args_esq->alto = pi - 1;
-
-        ThreadArgs *args_dir = malloc(sizeof(ThreadArgs));
-        args_dir->vetor = vetor;
-        args_dir->baixo = pi + 1;
-        args_dir->alto = alto;
-
-        // Tenta criar thread para a partição esquerda, se não ultrapassar o limite
+        int pi = partition(array, low, high);
+        int spawn = 0;
+        
+        // Verifica se há disponibilidade para criar nova thread
         pthread_mutex_lock(&thread_count_mutex);
         if (current_threads < MAX_THREADS) {
             current_threads++;
-            criar_esq = 1;
+            spawn = 1;
         }
         pthread_mutex_unlock(&thread_count_mutex);
-
-        if (criar_esq) {
-            pthread_create(&thread_esq, NULL, quicksort_thread, args_esq);
-        } else {
-            quicksort_sequencial(vetor, args_esq->baixo, args_esq->alto);
-            free(args_esq);
-        }
-
-        // Tenta criar thread para a partição direita, se possível
-        pthread_mutex_lock(&thread_count_mutex);
-        if (current_threads < MAX_THREADS) {
-            current_threads++;
-            criar_dir = 1;
-        }
-        pthread_mutex_unlock(&thread_count_mutex);
-
-        if (criar_dir) {
-            pthread_create(&thread_dir, NULL, quicksort_thread, args_dir);
-        } else {
-            quicksort_sequencial(vetor, args_dir->baixo, args_dir->alto);
-            free(args_dir);
-        }
-
-        // Aguarda a conclusão das threads criadas e atualiza o contador
-        if (criar_esq) {
-            pthread_join(thread_esq, NULL);
+        
+        if (spawn) {
+            // Cria thread para a partição esquerda
+            ThreadArgs *new_args = malloc(sizeof(ThreadArgs));
+            new_args->array = array;
+            new_args->low = low;
+            new_args->high = pi - 1;
+            pthread_t thread;
+            pthread_create(&thread, NULL, quicksort_thread, new_args);
+            
+            // Processa a partição direita na thread atual (eliminação de recursão de cauda)
+            low = pi + 1;
+            
+            // Aguarda a conclusão da thread criada e atualiza o contador
+            pthread_join(thread, NULL);
             pthread_mutex_lock(&thread_count_mutex);
             current_threads--;
             pthread_mutex_unlock(&thread_count_mutex);
-        }
-        if (criar_dir) {
-            pthread_join(thread_dir, NULL);
-            pthread_mutex_lock(&thread_count_mutex);
-            current_threads--;
-            pthread_mutex_unlock(&thread_count_mutex);
+        } else {
+            // Se não for possível criar nova thread, processa a partição esquerda sequencialmente
+            quicksort_sequential(array, low, pi - 1);
+            low = pi + 1;
         }
     }
     return NULL;
 }
 
-void preencher_vetor(int *vetor, int tamanho) {
-    for (int i = 0; i < tamanho; i++)
-        vetor[i] = rand();
+void fill_array(int *array, int size) {
+    for (int i = 0; i < size; i++)
+        array[i] = rand();
 }
 
 int main() {
-    int tamanhos[] = {1000000, 5000000, 10000000, 25000000, 50000000, 
-                      75000000, 100000000, 250000000, 500000000};
-    int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
-    double tempo_total = 0.0;
+    int sizes[] = {10000000, 20000000, 30000000, 40000000, 50000000,
+                   60000000, 70000000, 80000000, 90000000, 100000000};
+    int num_sizes = sizeof(sizes) / sizeof(sizes[0]);
+    double total_time = 0.0;
 
     srand(time(NULL));
 
-    for (int i = 0; i < num_tamanhos; i++) {
-        int tamanho = tamanhos[i];
-        int *vetor = (int *)malloc(tamanho * sizeof(int));
-        preencher_vetor(vetor, tamanho);
+    for (int i = 0; i < num_sizes; i++) {
+        int size = sizes[i];
+        int *array = malloc(size * sizeof(int));
+        fill_array(array, size);
 
-        // Cria argumentos dinamicamente para a thread inicial
+        // Cria os argumentos para a thread inicial
         ThreadArgs *args = malloc(sizeof(ThreadArgs));
-        args->vetor = vetor;
-        args->baixo = 0;
-        args->alto = tamanho - 1;
+        args->array = array;
+        args->low = 0;
+        args->high = size - 1;
 
-        clock_t inicio = clock();
-        pthread_t thread_inicial;
-        // Inicia o quicksort em uma thread separada
-        pthread_create(&thread_inicial, NULL, quicksort_thread, args);
-        pthread_join(thread_inicial, NULL);
-        clock_t fim = clock();
+        clock_t start = clock();
+        pthread_t initial_thread;
+        pthread_create(&initial_thread, NULL, quicksort_thread, args);
+        pthread_join(initial_thread, NULL);
+        clock_t end = clock();
 
-        double tempo_execucao = ((double)(fim - inicio)) / CLOCKS_PER_SEC;
-        tempo_total += tempo_execucao;
-        printf("Tamanho: %d, Tempo: %.4f segundos\n", tamanho, tempo_execucao);
-        free(vetor);
+        double elapsed = ((double)(end - start)) / CLOCKS_PER_SEC;
+        total_time += elapsed;
+        printf("Tamanho: %d, Tempo: %.4f segundos\n", size, elapsed);
+        free(array);
     }
 
-    printf("\nTempo médio: %.4f segundos\n", tempo_total / num_tamanhos);
+    printf("\nTempo médio: %.4f segundos\n", total_time / num_sizes);
     return 0;
 }

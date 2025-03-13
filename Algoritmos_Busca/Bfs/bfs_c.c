@@ -6,7 +6,7 @@
 #define GRAU_MEDIO 10  // Grau médio desejado para o grafo
 
 // Lista de tamanhos de vértices
-long tamanhos[] = {500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000};
+long tamanhos[] = {1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 700000, 8000000, 9000000};
 int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
 
 // Estrutura de cada nó (lista de adjacência)

@@ -4,7 +4,7 @@ using DataStructures
 
 # Criação otimizada do grafo
 function create_graph(n::Int, avg_degree::Int)
-    graph = [Vector{Int}() for _ in 1:n]
+    graph = [Vector{Int}() for _ in 1:n]  # Usando Vector para melhor desempenho
     for i in 2:n
         parent = rand(1:i-1)
         push!(graph[i], parent)
@@ -31,25 +31,27 @@ function parallel_bfs_optimized(graph::Vector{Vector{Int}}, start::Int)
     level = 0
 
     while !isempty(frontier)
-        # Cria buffers locais para cada thread
-        local_next = [Vector{Int}() for _ in 1:Threads.nthreads()]
+        next_frontier = Vector{Int}()
         frontier_copy = copy(frontier)
 
-        Threads.@threads for i in 1:length(frontier_copy)
-            u = frontier_copy[i]
-            @inbounds for v in graph[u]
-                # Checagem sem lock; pode ocorrer condição de corrida,
-                # mas, se ambos escreverem o mesmo valor (level+1), o impacto é apenas
-                # uma possível inserção duplicada na próxima fronteira.
+        # Usando um vetor de vetores para armazenar resultados de cada thread
+        local_next = [Vector{Int}() for _ in 1:Threads.nthreads()]
+
+        Threads.@threads for u in frontier_copy
+            tid = Threads.threadid()
+            for v in graph[u]
                 if distances[v] == -1
                     distances[v] = level + 1
-                    push!(local_next[Threads.threadid()], v)
+                    push!(local_next[tid], v)
                 end
             end
         end
 
-        # Combina os buffers locais na próxima fronteira
-        next_frontier = reduce(vcat, local_next)
+        # Combina os resultados de todas as threads
+        for vec in local_next
+            append!(next_frontier, vec)
+        end
+
         frontier = next_frontier
         level += 1
     end
@@ -57,9 +59,8 @@ function parallel_bfs_optimized(graph::Vector{Vector{Int}}, start::Int)
     return distances
 end
 
-
 function main()
-    sizes = [500000, 600000, 700000, 800000, 900000, 1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 7000000]
+    sizes = [1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 700000, 8000000, 9000000, 10000000]
     avg_degree = 10
     total_time = 0.0
 

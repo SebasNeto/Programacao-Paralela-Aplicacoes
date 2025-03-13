@@ -41,7 +41,7 @@ void preencher_vetor(int vetor[], int tamanho) {
 }
 
 int main() {
-    int tamanhos[] = {1000000, 5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000};
+    int tamanhos[] = {10000000, 20000000, 30000000, 40000000, 50000000, 60000000, 70000000, 80000000, 90000000, 100000000};
     int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
     double tempo_total = 0.0;
 

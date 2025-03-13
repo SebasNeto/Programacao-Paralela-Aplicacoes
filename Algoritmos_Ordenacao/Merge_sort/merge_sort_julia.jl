@@ -66,8 +66,8 @@ end
 
 # Função de teste para medir o desempenho
 function executar_teste()
-    tamanhos = [1_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000,
-                75_000_000, 100_000_000, 250_000_000, 500_000_000]
+    tamanhos = [10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000,
+                60_000_000, 70_000_000, 80_000_000, 90_000_000, 100_000_000]
     tempos = Float64[]
     
     println("Número de threads: ", Threads.nthreads())

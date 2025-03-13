@@ -71,8 +71,8 @@ function quicksort_parallel!(vetor, baixo, alto, depth=0, max_depth=Threads.nthr
 end
 
 function executar_teste()
-    tamanhos = [1_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000,
-                75_000_000, 100_000_000, 250_000_000, 500_000_000]
+    tamanhos = [10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_000,
+                60_000_000, 70_000_000, 80_000_000, 90_000_000, 100_000_000]
     tempos = Float64[]
 
     for tamanho in tamanhos
