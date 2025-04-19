@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define NUM_BUSCAS 1000
-#define NUM_TAMANHOS 9
-long tamanhos[] = {1000000, 5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000};
+#define NUM_BUSCAS 100000
+#define NUM_TAMANHOS 10
+long tamanhos[] = {1000000, 5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000,1000000000};
 
 // Função de comparação para qsort
 int comparar(const void *a, const void *b) {

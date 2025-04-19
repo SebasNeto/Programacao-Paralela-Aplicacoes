@@ -15,7 +15,6 @@ int busca_binaria(const int *arr, int n, int x) {
             return meio;
         else if (arr[meio] < x)
             esquerda = meio + 1;
-        else
             direita = meio - 1;
     }
     return -1;

@@ -4,7 +4,7 @@
 #include <time.h>
 #include <omp.h>
 
-#define NUM_BUSCAS 1000
+#define NUM_BUSCAS 100000
 #define NUM_THREADS 16
 #define NUM_TAMANHOS 9
 long tamanhos[] = {1000000, 5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000};
