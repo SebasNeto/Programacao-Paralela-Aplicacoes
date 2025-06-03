@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <omp.h>
 
-#define BLOCK_SIZE 64  // Tamanho do bloco para otimização
+#define BLOCK_SIZE 16  // Tamanho do bloco para otimização
 #define CHUNK_SIZE 8   // Tamanho do chunk para balanceamento dinâmico
 
 // Aloca a matriz em um único bloco de memória

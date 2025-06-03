@@ -288,3 +288,13 @@ int main() {
 
     return 0;
 }
+
+
+for (y = 0; y < H; y++)
+    for (x = 0; x < W; x++)
+        img[y][x] *= ganho;
+
+
+
+
+        
