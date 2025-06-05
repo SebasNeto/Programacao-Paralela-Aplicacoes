@@ -74,43 +74,12 @@ void merge_sort_halide(Buffer<int>& buf, int left, int right) {
         merge_sort_halide(buf, mid + 1, right);
     }
 
-    // Mesclagem
-    if (right - left > PARALLEL_THRESHOLD) {
-        // Mesclagem paralela usando Halide
-        Buffer<int> temp(right - left + 1);
-
-        Var x;
-        RDom r(0, right - left + 1);
-
-        // Índices nos subvetores
-        Expr left_idx = left + r;
-        Expr right_idx = mid + 1 + r;
-
-        // Condição para escolher entre os subvetores
-        Expr use_left = (left_idx <= mid) &&
-            ((right_idx > right) || (buf(left_idx) <= buf(right_idx)));
-
-        Func merge;
-        merge(r) = select(use_left, buf(left_idx), buf(right_idx));
-
-        merge.compute_root().parallel(r);
-        merge.realize(temp);
-
-        // Copia de volta para o buffer original
-        Func copy_back;
-        copy_back(x) = select(x >= left && x <= right, temp(x - left), buf(x));
-        copy_back.compute_root().parallel(x);
-        copy_back.realize(buf);
-    }
-    else {
-        // Mesclagem serial
-        serial_merge(buf, left, mid, right);
-    }
+    // Mesclagem - usando versão serial para maior estabilidade
+    serial_merge(buf, left, mid, right);
 }
 
 int main() {
-    vector<int> sizes = { 100000, 200000, 300000, 400000, 500000,
-                        600000, 700000, 800000, 900000, 1000000 };
+    vector<int> sizes = { 10000000, 20000000, 30000000, 40000000, 50000000, 60000000, 70000000, 80000000, 90000000, 100000000 };
     vector<double> times;
 
     cout << "Iniciando testes do Merge Sort em Halide..." << endl;
