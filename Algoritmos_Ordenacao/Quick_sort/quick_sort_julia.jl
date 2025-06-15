@@ -89,3 +89,21 @@ function executar_teste()
 end
 
 executar_teste()
+
+
+pi = particionar!(v, lo, hi)               # pivô divide o vetor
+@threads for side in 1:2                   # cria tasks em paralelo
+    if side == 1
+        quicksort_parallel!(v, lo,  pi-1, depth+1, maxd)
+    else
+        quicksort_parallel!(v, pi+1, hi,  depth+1, maxd)
+    end
+end
+
+
+
+tL = @spawn merge_sort_par!(A, B, l, m, d+1, maxd, thresh)
+merge_sort_par!(A, B, m+1, r, d+1, maxd, thresh)
+fetch(tL)                    # sincroniza
+
+

@@ -50,6 +50,20 @@ int main(void) {
         
         printf("Tempo médio para amostra %lld: %f segundos\n", NUM_AMOSTRAS, tempo_total / NUM_ITERACOES);
     }
+
+    int N;
+
+    long long contador = 0;
+    for (long long i = 0; i < N; i++) {        /* gera N pontos                */
+        double x = rand()/RAND_MAX*2.0 - 1.0;  /* rand ∈ [-1,1]                */
+        double y = rand()/RAND_MAX*2.0 - 1.0;
+        if (x*x + y*y <= 1.0)                  /* dentro do círculo?           */
+            contador++;
+    }
+    double pi = 4.0 * contador / N;            /* π ≈ 4·(pontos no círculo)/N  */
+
     
     return 0;
 }
+
+

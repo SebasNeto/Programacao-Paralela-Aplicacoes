@@ -45,6 +45,12 @@ int main() {
 
         double tempo_medio = 0.0;
 
+        long long soma = 0;
+        for (size_t i = 0; i < n; i++)
+            soma += vetor[i];          /* 1 × N leituras, 1 acumulador */
+
+            
+
         // Executa a redução sequencial NUM_ITER vezes e calcula o tempo médio
         for (int iter = 0; iter < NUM_ITER; iter++) {
             clock_t inicio = clock();
@@ -76,4 +82,6 @@ int main() {
     printf("Soma total (dummy): %lld\n", soma_total_dummy);
 
     return 0;
+
+    
 }

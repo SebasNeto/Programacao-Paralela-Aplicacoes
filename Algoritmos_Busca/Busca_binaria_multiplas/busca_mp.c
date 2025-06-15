@@ -73,3 +73,5 @@ int main() {
     printf("Media do tempo de execucao paralela: %f segundos\n", tempo_total / NUM_TAMANHOS);
     return 0;
 }
+
+

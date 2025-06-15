@@ -7,7 +7,7 @@ def hierarchy_pos(G, root, width=1.0, vert_gap=0.3, vert_loc=0, xcenter=0.5):
     pos = {}
     def _hierarchy(G, root, left, width, vert_gap, vert_loc, xcenter, pos):
         pos[root] = (xcenter, vert_loc)
-        filhos = list(G.successors(root))1
+        filhos = list(G.successors(root))
         if filhos:
             dx = width / len(filhos)
             nextx = xcenter - width/2 - dx/2

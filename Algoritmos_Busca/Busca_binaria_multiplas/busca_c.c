@@ -14,6 +14,7 @@ int comparar(const void *a, const void *b) {
 
 // Implementação da busca binária tradicional
 int busca_binaria(int arr[], int esquerda, int direita, int x) {
+    
     while (esquerda <= direita) {
         int meio = esquerda + (direita - esquerda) / 2;
         
@@ -62,7 +63,11 @@ int main() {
         free(buscas);
         free(resultados);
     }
+
+    
     
     printf("Média do tempo de execução tradicional: %f segundos\n", tempo_total / NUM_TAMANHOS);
     return 0;
 }
+
+

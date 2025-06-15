@@ -60,3 +60,15 @@ int main() {
     printf("\nTempo médio: %.4f segundos\n", tempo_total / num_tamanhos);
     return 0;
 }
+
+
+void merge_sort(int v[], int l, int r) {
+    if (l < r) {
+        int m = (l + r) / 2;
+        merge_sort(v, l, m);           /* recursão à esquerda  */
+        merge_sort(v, m+1, r);         /* recursão à direita   */
+        mesclar(v, l, m, r);           /* funde as metades     */
+    }
+}
+
+

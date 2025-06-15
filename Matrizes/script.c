@@ -13,10 +13,10 @@ void transpor_matriz(int n, double **matriz, double **transposta) {
 
 // Função para multiplicar matrizes (A * B^T)
 void multiplicar_matrizes(int n, double **A, double **B_transposta, double **C) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
+    for (int i = 0; i < n; i++) {           // percorre linhas de A
+        for (int j = 0; j < n; j++) {       // percorre colunas de B ^T
             C[i][j] = 0.0;
-            for (int k = 0; k < n; k++) {
+            for (int k = 0; k < n; k++) {   //produto interno
                 C[i][j] += A[i][k] * B_transposta[j][k];
             }
         }
@@ -90,3 +90,9 @@ int main() {
 
     return 0;
 }
+
+
+
+
+
+

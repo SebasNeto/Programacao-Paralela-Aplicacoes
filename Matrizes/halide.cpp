@@ -47,3 +47,17 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+
+
+
+Var x("x");
+Func prod("prod");                      // C(x) = A(x)*B(x)
+prod(x) = A(x) * B(x);                  // expressão pura
+
+prod.vectorize(x, vec)                 // SIMD: 'vec' = largura natural
+    .parallel(x);                      // divide o domínio x entre threads
+prod.realize(C);                       // gera resultado em buffer C
+
+
+
+

@@ -173,3 +173,23 @@ int main() {
     multiplasExecucoes(DIRETORIO_ENTRADA, DIRETORIO_SAIDA, NUM_EXECUCOES);
     return 0;
 }
+
+
+
+/* 1) HISTOGRAMA — percorre todos os W×H pixels */
+int hist[256] = {0};
+for (int p = 0; p < W*H; p++)
+    hist[pixels[p]]++;                     // soma 1 no nível de cinza lido
+
+/* 2) LÓGICA DE OTSU — 256 passos, custo desprezível */
+double wB = 0, sumB = 0, varMax = 0; int T = 0;
+for (int t = 0; t < 256; t++) {            // testa cada limiar t
+    wB   += hist[t];                       // peso da classe “fundo”
+    sumB += t * hist[t];                   // soma ponderada do fundo
+    double wF = total - wB;                // peso da “frente”
+    if (wB == 0 || wF == 0) continue;      // evita divisão por zero
+    double mB = sumB /  wB;                // média do fundo
+    double mF = (sumTotal - sumB) / wF;    // média da frente
+    double var = wB * wF * (mB - mF)*(mB - mF);   // variância entre classes
+    if (var > varMax) { varMax = var; T = t; }    // guarda melhor t
+}
