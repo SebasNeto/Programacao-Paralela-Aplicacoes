@@ -165,14 +165,6 @@ int main() {
 
 
 
-#pragma omp parallel for schedule(dynamic)
-for (int i = 0; i < tam_fronteira; i++) {
-    int u = fronteira[i];
-    for (int v : adj[u])
-        if (dist[v] == -1 &&
-            __sync_bool_compare_and_swap(&dist[v], -1, dist[u] + 1))
-            proxima[ __sync_fetch_and_add(&tam_prox, 1) ] = v;
-}
 
 
 

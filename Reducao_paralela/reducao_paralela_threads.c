@@ -124,27 +124,6 @@ int main() {
 }
 
 
-/* 1. divide o vetor em blocos aproximadamente iguais */
-size_t bloco = n / num_threads;
-...
-dados[i].inicio = idx_ini;
-dados[i].fim    = idx_ini + bloco + extra;   // reparte o resto
-pthread_create(&thr[i], NULL, funcao_thread, &dados[i]);
 
-/* 2. cada thread executa: */
-void *funcao_thread(void *arg) {
-    DadosThread *d = arg;
-    long long soma = 0;
-    for (size_t k = d->inicio; k < d->fim; k++)
-        soma += d->vetor[k];          // soma parcial local, sem disputas
-    d->soma_parcial = soma;
-}
-
-/* 3. thread principal reúne os resultados */
-long long soma_total = 0;
-for (int i = 0; i < num_threads; i++) {
-    pthread_join(threads[i], NULL);
-    soma_total += dados[i].soma_parcial;   // redução final
-}
 
 

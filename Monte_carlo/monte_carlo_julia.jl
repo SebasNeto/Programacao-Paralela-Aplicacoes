@@ -58,11 +58,6 @@ end
 
 principal()
 
-@threads for tid in 1:Threads.nthreads()
-    n_local = div(N, nthreads) + (tid ≤ N % nthreads)   # divide amostras
-    rng      = MersenneTwister(tid + 1234)              # RNG privado
-    cont[tid] = monte_carlo_pi_thread(n_local, rng)     # contagem local
-end
-π = 4.0 * sum(cont) / N                                 # redução final
+
 
 
