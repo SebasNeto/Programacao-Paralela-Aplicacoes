@@ -28,4 +28,14 @@ https://visualstudio.microsoft.com
 
 https://embarcados.com.br/linguagem-c-guia-completo/
 
+Links para os dados coletados durante os experimentos:
+
+Para as tecnicas de Processamento de Imagens:
+
+https://drive.google.com/drive/u/1/folders/1Qsy1OPffPhSiCEgaYnYJ6thMOBx3zjm1
+
+Para as tecnicas de Computação de Alto Desempenho (HPC):
+
+https://drive.google.com/drive/folders/1jDIjZhzu2IGj86_X9por0oVlaXAABfYf?usp=sharing
+
 
