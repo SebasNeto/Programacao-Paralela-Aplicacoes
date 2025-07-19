@@ -4,7 +4,7 @@ Um breve resumo sobre o projeto:
 
 Neste projeto, realizamos uma análise comparativa entre algoritmos paralelos e tradicionais em processamento de imagens e tecnicas de Computação de Alto Desempenho, focando em tempo de processamento, eficiência no uso de recursos e qualidade dos resultados. A pesquisa envolve experimentos práticos com transformações radiométricas, detecção de bordas, filtragem espacial e limiarização de Otsu em diferentes conjuntos de imagens. Além disso, multiplicação de matrizes, Algoritmos de Ordenação, Algoritmos de Busca, Monte Carlo e Redução Paralela também foram algoritmos implementados.
 
-A linguagem utilizada para aproveitar os recursos da programação paralela foi a Halide, OpenMP, Julia e C+Threads, que pode ter sua documentação consultada pelo link abaixo:
+As linguagens utilizadas para aproveitar os recursos da programação paralela foi a Halide, OpenMP, Julia e C+Threads, que pode ter sua documentação consultada pelo link abaixo:
 
 https://halide-lang.org/
 
