@@ -24,7 +24,7 @@ double get_time() {
 }
 
 // Função executada por cada thread para multiplicar parte da matriz
-void *multiplicar_matrizes_thread(void *arg) {
+void *mulMatrizesThreads(void *arg) {
     ThreadData *data = (ThreadData *)arg;
     int n = data->n;
     double **A = data->A;
@@ -96,7 +96,7 @@ int main() {
             thread_data[i].C = C;
             thread_data[i].start_row = i * rows_per_thread;
             thread_data[i].end_row = (i == NUM_THREADS - 1) ? n : (i + 1) * rows_per_thread;
-            pthread_create(&threads[i], NULL, multiplicar_matrizes_thread, (void *)&thread_data[i]);
+            pthread_create(&threads[i], NULL, mulMatrizesThreads, (void *)&thread_data[i]);
         }
 
         for (int i = 0; i < NUM_THREADS; i++) {

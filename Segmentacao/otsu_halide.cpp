@@ -9,7 +9,7 @@ namespace fs = std::filesystem;
 using namespace Halide;
 
 // Função para aplicar a limiarização de Otsu em uma imagem
-Buffer<uint8_t> aplicar_limiarizacao_otsu(const Buffer<uint8_t>& imagem_entrada) {
+Buffer<uint8_t> limiarizacaoOtsu(const Buffer<uint8_t>& imagem_entrada) {
     // Se a imagem tiver 3 canais (RGB), converte para escala de cinza
     Buffer<uint8_t> escala_cinza;
     if (imagem_entrada.channels() == 3) {
@@ -140,7 +140,7 @@ int main() {
 
         // --- Execução de aquecimento (primeira execução descartada) ---
         try {
-            Buffer<uint8_t> dummy = aplicar_limiarizacao_otsu(imagem_entrada);
+            Buffer<uint8_t> dummy = limiarizacaoOtsu(imagem_entrada);
         }
         catch (const std::exception& e) {
             std::cerr << "Erro na execução de aquecimento para a imagem " << caminho_imagem.filename()
@@ -153,7 +153,7 @@ int main() {
 
         Buffer<uint8_t> imagem_saida;
         try {
-            imagem_saida = aplicar_limiarizacao_otsu(imagem_entrada);
+            imagem_saida = limiarizacaoOtsu(imagem_entrada);
         }
         catch (const std::exception& e) {
             std::cerr << "Erro ao processar a imagem " << caminho_imagem.filename()

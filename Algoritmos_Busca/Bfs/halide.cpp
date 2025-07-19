@@ -16,7 +16,7 @@ int main() {
     double soma_tempos = 0.0;
 
     for (long n : tamanhos) {
-        // ---------- Gerar grafo aleatório fixo ----------
+        // ---------- Gerar grafo ----------
         vector<vector<int>> vizinhos(n, vector<int>(MAX_GRAU, -1));
         default_random_engine gen;
         uniform_int_distribution<int> dist(0, n - 1);
@@ -24,7 +24,7 @@ int main() {
         for (long i = 0; i < n; i++) {
             for (int j = 0; j < MAX_GRAU; j++) {
                 int v = dist(gen);
-                while (v == i) v = dist(gen); // evitar laços
+                while (v == i) v = dist(gen); 
                 vizinhos[i][j] = v;
             }
         }

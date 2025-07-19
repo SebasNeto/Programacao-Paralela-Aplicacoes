@@ -15,7 +15,7 @@ const int tamanhos[] = { 1000000, 5000000, 10000000, 25000000, 50000000,
                        75000000, 100000000, 250000000, 500000000, 1000000000 };
 
 // Implementação da busca binária em Halide
-Expr busca_binaria_halide(Func& arr, Expr tamanho, Expr valor) {
+Expr buscaBinaria(Func& arr, Expr tamanho, Expr valor) {
     Expr esquerda = 0;
     Expr direita = tamanho - 1;
     Expr resultado = -1;  // -1 indica não encontrado
@@ -81,7 +81,7 @@ int main() {
         Expr tamanho_expr = cast<int>(TAMANHO_ARRAY);
 
         // Implementação vetorizada das buscas
-        resultado_func(x) = busca_binaria_halide(arr_func, tamanho_expr, buscas_buf(x));
+        resultado_func(x) = buscaBinaria(arr_func, tamanho_expr, buscas_buf(x));
 
         // Otimizações de agendamento
         arr_func.compute_root();

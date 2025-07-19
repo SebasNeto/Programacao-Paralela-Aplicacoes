@@ -15,7 +15,7 @@ const char* DIRETORIO_SAIDA   = "/mnt/c/Users/bicha/Documents/Saida_otsu";
 //----------------------------------------------------------
 // Função para calcular o limiar de Otsu com OpenMP
 //----------------------------------------------------------
-int calcular_limiar_otsu_paralelo(const uint8_t* dados_imagem, int largura, int altura) {
+int calcularLimiar(const uint8_t* dados_imagem, int largura, int altura) {
     int total_pix = largura * altura;
     int histograma[256] = {0};
 
@@ -72,7 +72,7 @@ int calcular_limiar_otsu_paralelo(const uint8_t* dados_imagem, int largura, int 
 //----------------------------------------------------------
 // Função para aplicar a limiarização com OpenMP
 //----------------------------------------------------------
-void aplicar_limiarizacao(const uint8_t* imagem_entrada, uint8_t* imagem_saida, int total_pix, int limiar) {
+void aplicarLimiarizacao(const uint8_t* imagem_entrada, uint8_t* imagem_saida, int total_pix, int limiar) {
     #pragma omp parallel for simd
     for (int i = 0; i < total_pix; i++) {
         imagem_saida[i] = (imagem_entrada[i] > limiar) ? MAX_NIVEL_CINZA : 0;
@@ -82,7 +82,7 @@ void aplicar_limiarizacao(const uint8_t* imagem_entrada, uint8_t* imagem_saida, 
 //----------------------------------------------------------
 // Função para processar uma única imagem e medir o tempo
 //----------------------------------------------------------
-double processar_imagem(const char* caminho_entrada, const char* caminho_saida) {
+double processarImagem(const char* caminho_entrada, const char* caminho_saida) {
     double inicio = omp_get_wtime();
 
     // Carrega a imagem em escala de cinza
@@ -96,11 +96,11 @@ double processar_imagem(const char* caminho_entrada, const char* caminho_saida) 
     int altura = imagem.rows;
 
     // Calcula o limiar de Otsu paralelamente
-    int limiar_otsu = calcular_limiar_otsu_paralelo(imagem.data, largura, altura);
+    int limiar_otsu = calcularLimiar(imagem.data, largura, altura);
 
     // Cria a imagem segmentada e aplica a limiarização
     cv::Mat imagem_segmentada(altura, largura, CV_8UC1);
-    aplicar_limiarizacao(imagem.data, imagem_segmentada.data, largura * altura, limiar_otsu);
+    aplicarLimiarizacao(imagem.data, imagem_segmentada.data, largura * altura, limiar_otsu);
 
     // Salva a imagem segmentada
     cv::imwrite(caminho_saida, imagem_segmentada);
@@ -113,7 +113,7 @@ double processar_imagem(const char* caminho_entrada, const char* caminho_saida) 
 //----------------------------------------------------------
 // Função para processar todas as imagens do diretório
 //----------------------------------------------------------
-void processar_diretorio(const char* diretorio_entrada, const char* diretorio_saida) {
+void processarDiretorio(const char* diretorio_entrada, const char* diretorio_saida) {
     struct dirent *entrada;
     DIR *dp = opendir(diretorio_entrada);
     if (dp == NULL) {
@@ -132,7 +132,7 @@ void processar_diretorio(const char* diretorio_entrada, const char* diretorio_sa
         std::string caminho_entrada = std::string(diretorio_entrada) + "/" + nome;
         if (stat(caminho_entrada.c_str(), &st) == 0 && S_ISREG(st.st_mode)) {
             std::string caminho_saida = std::string(diretorio_saida) + "/" + nome;
-            double tempo = processar_imagem(caminho_entrada.c_str(), caminho_saida.c_str());
+            double tempo = processarImagem(caminho_entrada.c_str(), caminho_saida.c_str());
             tempo_total += tempo;
             num_imagens++;
         }
@@ -152,6 +152,6 @@ void processar_diretorio(const char* diretorio_entrada, const char* diretorio_sa
 //----------------------------------------------------------
 int main() {
     printf("Iniciando processamento com %d threads...\n", omp_get_max_threads());
-    processar_diretorio(DIRETORIO_ENTRADA, DIRETORIO_SAIDA);
+    processarDiretorio(DIRETORIO_ENTRADA, DIRETORIO_SAIDA);
     return 0;
 }

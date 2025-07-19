@@ -10,15 +10,15 @@ using namespace Halide;
 using namespace std;
 using namespace std::chrono;
 
-const int PARALLEL_THRESHOLD = 1 << 20;  // Limiar para paralelismo (1M elementos)
+const int PARALLEL_THRESHOLD = 1 << 20; 
 
-bool is_sorted(const vector<int>& arr) {
+bool sortear(const vector<int>& arr) {
     for (size_t i = 1; i < arr.size(); i++)
         if (arr[i - 1] > arr[i]) return false;
     return true;
 }
 
-void serial_merge(Buffer<int>& buf, int left, int mid, int right) {
+void mergeSerial(Buffer<int>& buf, int left, int mid, int right) {
     vector<int> temp(right - left + 1);
     int i = left, j = mid + 1, k = 0;
 
@@ -33,7 +33,7 @@ void serial_merge(Buffer<int>& buf, int left, int mid, int right) {
     }
 }
 
-void merge_sort_halide(Buffer<int>& buf, int left, int right) {
+void mergeSortHalide(Buffer<int>& buf, int left, int right) {
     if (left >= right) return;
 
     // Usar insertion sort para pequenos intervalos
@@ -61,21 +61,20 @@ void merge_sort_halide(Buffer<int>& buf, int left, int right) {
         // Ordena a metade esquerda
         left_sort(x) = buf(x);
         left_sort.compute_root().parallel(x);
-        merge_sort_halide(buf, left, mid);
+        mergeSortHalide(buf, left, mid);
 
         // Ordena a metade direita
         right_sort(x) = buf(x);
         right_sort.compute_root().parallel(x);
-        merge_sort_halide(buf, mid + 1, right);
+        mergeSortHalide(buf, mid + 1, right);
     }
     else {
-        // Versão serial para pequenos intervalos
-        merge_sort_halide(buf, left, mid);
-        merge_sort_halide(buf, mid + 1, right);
+        mergeSortHalide(buf, left, mid);
+        mergeSortHalide(buf, mid + 1, right);
     }
 
     // Mesclagem - usando versão serial para maior estabilidade
-    serial_merge(buf, left, mid, right);
+    mergeSerial(buf, left, mid, right);
 }
 
 int main() {
@@ -99,7 +98,7 @@ int main() {
 
         cout << " Ordenando..." << flush;
         auto start = high_resolution_clock::now();
-        merge_sort_halide(buf, 0, size - 1);
+        mergeSortHalide(buf, 0, size - 1);
         auto stop = high_resolution_clock::now();
 
         for (int i = 0; i < size; i++) {
@@ -110,7 +109,7 @@ int main() {
         double seconds = duration.count() / 1000.0;
         times.push_back(seconds);
 
-        if (!is_sorted(data)) {
+        if (!sortear(data)) {
             cerr << "\nErro: array não ordenado para tamanho " << size << endl;
             return 1;
         }

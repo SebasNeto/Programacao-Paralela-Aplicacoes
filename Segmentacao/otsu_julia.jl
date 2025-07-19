@@ -7,7 +7,7 @@ const DIRETORIO_SAIDA = "/mnt/c/Users/bicha/Documents/Saida_otsu"
 #----------------------------------------------------------
 # Verifica se um arquivo é uma imagem suportada
 #----------------------------------------------------------
-function verificar_imagem(nome_arquivo::String)
+function verificarImagem(nome_arquivo::String)
     extensoes_suportadas = [".png", ".jpg", ".jpeg", ".bmp", ".tiff"]
     any(endswith(nome_arquivo, ext) for ext in extensoes_suportadas)
 end
@@ -15,13 +15,13 @@ end
 #----------------------------------------------------------
 # Lista arquivos de imagem no diretório
 #----------------------------------------------------------
-function listar_arquivos(diretorio::String)
+function listarArquivos(diretorio::String)
     if !isdir(diretorio)
         println("Erro: Diretório não encontrado -> $diretorio")
         return []
     end
     arquivos = readdir(diretorio, join=true)
-    imagens = filter(verificar_imagem, arquivos)
+    imagens = filter(verificarImagem, arquivos)
 
     if isempty(imagens)
         println("Nenhuma imagem foi encontrada em $diretorio")
@@ -32,7 +32,7 @@ end
 #----------------------------------------------------------
 # Converte imagem para escala de cinza se necessário
 #----------------------------------------------------------
-function converter_para_cinza(imagem)
+function converterCinza(imagem)
     if eltype(imagem) <: Color3  # Se a imagem for RGB
         return Gray.(imagem)  # Converte para escala de cinza
     end
@@ -42,8 +42,8 @@ end
 #----------------------------------------------------------
 # Calcula o histograma em paralelo
 #----------------------------------------------------------
-function calcular_histograma_paralelo(imagem)
-    imagem = converter_para_cinza(imagem)  # Garante que a imagem está em escala de cinza
+function calcularhistograma(imagem)
+    imagem = converterCinza(imagem)  # Garante que a imagem está em escala de cinza
 
     histograma_global = zeros(Int, 256)
     num_threads = nthreads()
@@ -69,7 +69,7 @@ end
 #----------------------------------------------------------
 # Função para calcular o limiar de Otsu
 #----------------------------------------------------------
-function calcular_limiar_otsu(histograma, total_pixels)
+function calcularLimiarOtsu(histograma, total_pixels)
     p = histograma ./ total_pixels
     wB = cumsum(p)
     wF = 1 .- wB
@@ -92,7 +92,7 @@ end
 #----------------------------------------------------------
 # Aplica a limiarização
 #----------------------------------------------------------
-function aplicar_limiarizacao!(imagem, limiar)
+function aplicarLimiarizacao(imagem, limiar)
     @threads for i in eachindex(imagem)
         imagem[i] = imagem[i] > limiar ? 1.0 : 0.0
     end
@@ -101,15 +101,15 @@ end
 #----------------------------------------------------------
 # Processa uma única imagem e retorna o tempo de execução
 #----------------------------------------------------------
-function processar_imagem(caminho_entrada::String, caminho_saida::String)
+function processarImagem(caminho_entrada::String, caminho_saida::String)
     inicio = time()
 
-    imagem = load(caminho_entrada) |> converter_para_cinza  # Converte para escala de cinza
+    imagem = load(caminho_entrada) |> converterCinza  # Converte para escala de cinza
 
     # Aplica a técnica de Otsu corretamente
-    histograma = calcular_histograma_paralelo(imagem)
-    limiar = calcular_limiar_otsu(histograma, length(imagem))
-    aplicar_limiarizacao!(imagem, limiar)
+    histograma = calcularhistograma(imagem)
+    limiar = calcularLimiarOtsu(histograma, length(imagem))
+    aplicarLimiarizacao(imagem, limiar)
 
     save(caminho_saida, imagem)  # Salva a imagem segmentada
 
@@ -121,9 +121,9 @@ end
 #----------------------------------------------------------
 # Processa todas as imagens e exibe o tempo médio
 #----------------------------------------------------------
-function processar_diretorio(diretorio_entrada::String, diretorio_saida::String)
+function processarDiretorio(diretorio_entrada::String, diretorio_saida::String)
     isdir(diretorio_saida) || mkpath(diretorio_saida)
-    imagens = listar_arquivos(diretorio_entrada)
+    imagens = listarArquivos(diretorio_entrada)
 
     if isempty(imagens)
         println("⚠️ Nenhuma imagem foi processada.")
@@ -134,7 +134,7 @@ function processar_diretorio(diretorio_entrada::String, diretorio_saida::String)
 
     for caminho_entrada in imagens
         caminho_saida = joinpath(diretorio_saida, basename(caminho_entrada))
-        push!(tempos_execucao, processar_imagem(caminho_entrada, caminho_saida))
+        push!(tempos_execucao, processarImagem(caminho_entrada, caminho_saida))
     end
 
     if !isempty(tempos_execucao)
@@ -150,7 +150,7 @@ end
 #----------------------------------------------------------
 function main()
     println("🚀 Iniciando processamento com $(nthreads()) threads...\n")
-    processar_diretorio(DIRETORIO_ENTRADA, DIRETORIO_SAIDA)
+    processarDiretorio(DIRETORIO_ENTRADA, DIRETORIO_SAIDA)
 end
 
 main()

@@ -2,8 +2,8 @@
 #include <stdlib.h>
 #include <omp.h>
 
-#define MIN_SIZE 100000      // Tamanho mínimo para criar uma task
-#define COPY_MIN_SIZE 100000 // Tamanho mínimo para paralelizar a cópia na mesclagem
+#define MIN_SIZE 100000      
+#define COPY_MIN_SIZE 100000 
 
 // Função para mesclar dois subvetores usando o vetor auxiliar pré-alocado
 void mesclar(int vetor[], int temp[], int esq, int meio, int dir) {
@@ -33,8 +33,8 @@ void mesclar(int vetor[], int temp[], int esq, int meio, int dir) {
     }
 }
 
-// Função recursiva de merge sort com OpenMP tasks
-void merge_sort_openmp(int vetor[], int temp[], int esq, int dir) {
+
+void mergeSorOpenmp(int vetor[], int temp[], int esq, int dir) {
     if (esq < dir) {
         int meio = esq + (dir - esq) / 2;
         
@@ -43,12 +43,12 @@ void merge_sort_openmp(int vetor[], int temp[], int esq, int dir) {
         {
             #pragma omp task if((meio - esq) > MIN_SIZE) shared(vetor, temp)
             {
-                merge_sort_openmp(vetor, temp, esq, meio);
+                mergeSorOpenmp(vetor, temp, esq, meio);
             }
             
             #pragma omp task if((dir - meio) > MIN_SIZE) shared(vetor, temp)
             {
-                merge_sort_openmp(vetor, temp, meio + 1, dir);
+                mergeSorOpenmp(vetor, temp, meio + 1, dir);
             }
         }
         
@@ -56,7 +56,7 @@ void merge_sort_openmp(int vetor[], int temp[], int esq, int dir) {
     }
 }
 
-void preencher_vetor(int vetor[], int tamanho) {
+void preencherVetor(int vetor[], int tamanho) {
     for (int i = 0; i < tamanho; i++)
         vetor[i] = rand() % 100000;
 }
@@ -77,13 +77,13 @@ int main() {
             exit(1);
         }
         
-        preencher_vetor(vetor, tamanho);
+        preencherVetor(vetor, tamanho);
         double inicio = omp_get_wtime();
         
         #pragma omp parallel
         {
             #pragma omp single
-            merge_sort_openmp(vetor, temp, 0, tamanho - 1);
+            mergeSorOpenmp(vetor, temp, 0, tamanho - 1);
         }
         
         double fim = omp_get_wtime();

@@ -56,7 +56,7 @@ Grafo *criar_grafo(long num_vertices, int grau_medio) {
         adicionar_aresta(grafo, i, pai);
         adicionar_aresta(grafo, pai, i);
     }
-    // Adiciona arestas extras para atingir o grau médio desejado
+    // Adiciona arestas extras para atingir o grau médio 
     long total_arestas = (grau_medio * num_vertices) / 2;
     long arestas_extras = total_arestas - (num_vertices - 1);
     for (long i = 0; i < arestas_extras; i++) {
@@ -144,7 +144,6 @@ void bfs_sequencial(Grafo *grafo, int inicio, int *distancia) {
     liberar_fila(f);
 }
 
-// Função para calcular a diferença de tempo (em segundos)
 double diferenca_tempo(struct timespec inicio, struct timespec fim) {
     return (fim.tv_sec - inicio.tv_sec) + (fim.tv_nsec - inicio.tv_nsec) / 1e9;
 }

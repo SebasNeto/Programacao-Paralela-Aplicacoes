@@ -1,4 +1,4 @@
-// busca_binaria_paralela_otimizado.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -8,9 +8,9 @@
 #define NUM_THREADS 16
 #define NUM_TAMANHOS 9
 long tamanhos[] = {1000000, 5000000, 10000000, 25000000, 50000000, 75000000, 100000000, 250000000, 500000000};
-//correct
+
 // Implementação da busca binária
-int busca_binaria(const int arr[], long esquerda, long direita, int x) {
+int buscaBinaria(const int arr[], long esquerda, long direita, int x) {
     while (esquerda <= direita) {
         long meio = esquerda + (direita - esquerda) / 2;
         if (arr[meio] == x)
@@ -56,7 +56,7 @@ int main() {
         double inicio = omp_get_wtime();
         #pragma omp parallel for schedule(static)
         for (int i = 0; i < NUM_BUSCAS; i++) {
-            resultados[i] = busca_binaria(arr, 0, TAMANHO_ARRAY - 1, buscas[i]);
+            resultados[i] = buscaBinaria(arr, 0, TAMANHO_ARRAY - 1, buscas[i]);
         }
         double fim = omp_get_wtime();
         

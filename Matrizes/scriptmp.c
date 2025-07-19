@@ -5,25 +5,25 @@
 #define BLOCK_SIZE 16  // Tamanho do bloco para otimização
 #define CHUNK_SIZE 8   // Tamanho do chunk para balanceamento dinâmico
 
-// Aloca a matriz em um único bloco de memória
-double* alocar_matriz(int n) {
+
+double* alocarMatriz(int n) {
     return (double*) malloc(n * n * sizeof(double));
 }
 
 // Libera a memória da matriz
-void liberar_matriz(double *matriz) {
+void liberarMatriz(double *matriz) {
     free(matriz);
 }
 
 // Inicializa a matriz com valores aleatórios
-void inicializar_matriz(double *matriz, int n) {
+void inicializarMatriz(double *matriz, int n) {
     for (int i = 0; i < n * n; i++) {
         matriz[i] = rand() % 10;
     }
 }
 
-// Função para multiplicação de matrizes usando OpenMP com melhor paralelismo
-void multiplicar_matrizes(int n, double *A, double *B, double *C) {
+// Função para multiplicação de matrizes usando OpenMP
+void multMatriz(int n, double *A, double *B, double *C) {
     #pragma omp parallel for schedule(dynamic, CHUNK_SIZE)
     for (int i = 0; i < n; i += BLOCK_SIZE) {
         for (int j = 0; j < n; j += BLOCK_SIZE) {
@@ -55,31 +55,31 @@ int main() {
 
     for (int t = 0; t < num_testes; t++) {
         int n = tamanhos[t];
-        printf("▶️ Criando matrizes de tamanho %d x %d ...\n", n, n);
+        printf(" Criando matrizes de tamanho %d x %d ...\n", n, n);
 
-        double *A = alocar_matriz(n);
-        double *B = alocar_matriz(n);
-        double *C = alocar_matriz(n);
+        double *A = alocarMatriz(n);
+        double *B = alocarMatriz(n);
+        double *C = alocarMatriz(n);
 
-        inicializar_matriz(A, n);
-        inicializar_matriz(B, n);
+        inicializarMatriz(A, n);
+        inicializarMatriz(B, n);
         for (int i = 0; i < n * n; i++) C[i] = 0.0;
 
-        printf("🔄 Multiplicando matrizes de tamanho %d x %d ...\n", n, n);
+        printf(" Multiplicando matrizes de tamanho %d x %d ...\n", n, n);
         double inicio = omp_get_wtime();
-        multiplicar_matrizes(n, A, B, C);
+        multMatriz(n, A, B, C);
         double fim = omp_get_wtime();
 
         tempos[t] = fim - inicio;
-        printf("✅ Concluído: Tamanho %d x %d -> Tempo: %.4f segundos\n\n", n, n, tempos[t]);
+        printf(" Concluído: Tamanho %d x %d -> Tempo: %.4f segundos\n\n", n, n, tempos[t]);
 
-        liberar_matriz(A);
-        liberar_matriz(B);
-        liberar_matriz(C);
+        liberarMatriz(A);
+        liberarMatriz(B);
+        liberarMatriz(C);
     }
 
     double soma_tempos = 0;
     for (int i = 0; i < num_testes; i++) soma_tempos += tempos[i];
-    printf("\n📊 Média dos tempos de execução: %.4f segundos\n", soma_tempos / num_testes);
+    printf("\n Média dos tempos de execução: %.4f segundos\n", soma_tempos / num_testes);
     return 0;
 }

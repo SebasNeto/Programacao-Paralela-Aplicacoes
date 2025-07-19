@@ -3,8 +3,8 @@ using Base.Threads
 using DataStructures
 
 # Criação otimizada do grafo
-function create_graph(n::Int, avg_degree::Int)
-    graph = [Vector{Int}() for _ in 1:n]  # Usando Vector para melhor desempenho
+function criarGrafo(n::Int, avg_degree::Int)
+    graph = [Vector{Int}() for _ in 1:n]  
     for i in 2:n
         parent = rand(1:i-1)
         push!(graph[i], parent)
@@ -22,8 +22,8 @@ function create_graph(n::Int, avg_degree::Int)
     return graph
 end
 
-# BFS Paralela com controle de concorrência
-function parallel_bfs_optimized(graph::Vector{Vector{Int}}, start::Int)
+# BFS Paralela 
+function paraleloBfs(graph::Vector{Vector{Int}}, start::Int)
     n = length(graph)
     distances = fill(-1, n)
     distances[start] = 0
@@ -34,7 +34,7 @@ function parallel_bfs_optimized(graph::Vector{Vector{Int}}, start::Int)
         next_frontier = Vector{Int}()
         frontier_copy = copy(frontier)
 
-        # Usando um vetor de vetores para armazenar resultados de cada thread
+        #vetor para armazenar resultados de cada thread
         local_next = [Vector{Int}() for _ in 1:Threads.nthreads()]
 
         Threads.@threads for u in frontier_copy
@@ -66,9 +66,9 @@ function main()
 
     for s in sizes
         println("Tamanho do grafo: $s vértices")
-        graph = create_graph(s, avg_degree)
+        graph = criarGrafo(s, avg_degree)
         t_start = time()
-        distances = parallel_bfs_optimized(graph, 1)  
+        distances = paraleloBfs(graph, 1)  
         t_end = time()
         t = t_end - t_start
         total_time += t

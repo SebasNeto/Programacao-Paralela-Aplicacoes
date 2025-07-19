@@ -7,7 +7,8 @@ using namespace Halide;
 using namespace Halide::Tools;
 
 int main(int argc, char** argv) {
-    std::vector<int> tamanhos = {1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000};
+
+    std::vector<int> tamanhos = { 256, 512, 1024, 2048 };
 
     Target target = get_jit_target_from_environment();
     const int vec = target.natural_vector_size<float>();
@@ -16,24 +17,39 @@ int main(int argc, char** argv) {
     int total_testes = tamanhos.size();
 
     for (int tamanho : tamanhos) {
-        printf("Benchmark com vetor de tamanho: %d\n", tamanho);
+        printf("Benchmark com matrizes de tamanho: %dx%d\n", tamanho, tamanho);
 
-        Buffer<float> A(tamanho), B(tamanho), C(tamanho);
+        Buffer<float> A(tamanho, tamanho);
+        Buffer<float> B(tamanho, tamanho);
+        Buffer<float> C(tamanho, tamanho);
 
-        for (int i = 0; i < tamanho; i++) {
-            A(i) = (rand() % 100) / 100.0f;
-            B(i) = (rand() % 100) / 100.0f;
+        for (int y = 0; y < tamanho; y++) {
+            for (int x = 0; x < tamanho; x++) {
+                A(x, y) = (rand() % 100) / 100.0f;
+                B(x, y) = (rand() % 100) / 100.0f;
+            }
         }
 
-        Var x("x");
-        Func vetor_mul("vetor_mul");
+        Var x("x"), y("y");
+        Func mat_mul("mat_mul");
+        RDom k(0, tamanho);
 
-        vetor_mul(x) = A(x) * B(x);
-        vetor_mul.vectorize(x, vec).parallel(x);
+        mat_mul(x, y) = sum(A(k, y) * B(x, k));
+
+        Var xo, yo, xi, yi;
+        mat_mul.tile(x, y, xo, yo, xi, yi, 24, 24) 
+            .fuse(xo, yo, xo)                
+            .parallel(xo);                
+
+
+        mat_mul.update()
+            .reorder(x, y, k)     
+            .vectorize(x, vec)    
+            .unroll(k, 4);      
 
         // Medir tempo de execução
         double tempo = benchmark([&]() {
-            vetor_mul.realize(C);
+            mat_mul.realize(C);
             });
 
         printf("Tempo de execução: %.6f segundos\n", tempo);

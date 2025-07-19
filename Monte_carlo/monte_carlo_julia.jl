@@ -8,8 +8,7 @@ tamanhos_amostras = [
     60_000_000, 70_000_000, 80_000_000, 90_000_000, 100_000_000
 ]
 
-# Função que processa um número específico de amostras usando um gerador RNG fornecido
-function monte_carlo_pi_thread(amostras::Int, rng::AbstractRNG)
+function monteCarlo(amostras::Int, rng::AbstractRNG)
     contador = 0
     for _ in 1:amostras
         x = rand(rng) * 2.0 - 1.0
@@ -22,7 +21,7 @@ function monte_carlo_pi_thread(amostras::Int, rng::AbstractRNG)
 end
 
 # Função paralela que distribui as amostras entre as threads e retorna a estimativa de π
-function monte_carlo_pi_paralelo(total_amostras::Int)
+function monteCarloParalelo(total_amostras::Int)
     num_threads = Threads.nthreads()
     amostras_por_thread = div(total_amostras, num_threads)
     resto = total_amostras % num_threads
@@ -33,20 +32,19 @@ function monte_carlo_pi_paralelo(total_amostras::Int)
         amostras = amostras_por_thread + (id_thread <= resto ? 1 : 0)
         # Inicializa um gerador de números aleatórios específico para a thread
         rng = MersenneTwister(Threads.threadid() + 1234 + id_thread)
-        contadores[id_thread] = monte_carlo_pi_thread(amostras, rng)
+        contadores[id_thread] = monteCarlo(amostras, rng)
     end
     total_contador = sum(contadores)
     return 4.0 * total_contador / total_amostras
 end
 
-# Função principal que executa várias iterações, mede o tempo e calcula a média para cada tamanho de amostra
 function principal()
     for num_amostras in tamanhos_amostras
         tempos = Float64[]
         println("\nTamanho da amostra: $num_amostras")
         for iteracao in 1:NUM_ITERACOES
             inicio_tempo = time()
-            pi_estimado = monte_carlo_pi_paralelo(num_amostras)
+            pi_estimado = monteCarloParalelo(num_amostras)
             fim_tempo = time()
             tempo_decorrido = fim_tempo - inicio_tempo
             push!(tempos, tempo_decorrido)

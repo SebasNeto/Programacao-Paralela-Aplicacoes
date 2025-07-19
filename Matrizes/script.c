@@ -3,7 +3,7 @@
 #include <time.h>
 
 // Função para transpor uma matriz
-void transpor_matriz(int n, double **matriz, double **transposta) {
+void transporMatriz(int n, double **matriz, double **transposta) {
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < n; j++) {
             transposta[j][i] = matriz[i][j];
@@ -12,7 +12,7 @@ void transpor_matriz(int n, double **matriz, double **transposta) {
 }
 
 // Função para multiplicar matrizes (A * B^T)
-void multiplicar_matrizes(int n, double **A, double **B_transposta, double **C) {
+void multMatriz(int n, double **A, double **B_transposta, double **C) {
     for (int i = 0; i < n; i++) {           // percorre linhas de A
         for (int j = 0; j < n; j++) {       // percorre colunas de B ^T
             C[i][j] = 0.0;
@@ -53,13 +53,13 @@ int main() {
 
         // Transposição da matriz B
         clock_t inicio_transposicao = clock();
-        transpor_matriz(n, B, B_transposta);
+        transporMatriz(n, B, B_transposta);
         clock_t fim_transposicao = clock();
         double tempo_transposicao = (double)(fim_transposicao - inicio_transposicao) / CLOCKS_PER_SEC;
 
         // Multiplicação das matrizes (A * B^T)
         clock_t inicio_multiplicacao = clock();
-        multiplicar_matrizes(n, A, B_transposta, C);
+        multMatriz(n, A, B_transposta, C);
         clock_t fim_multiplicacao = clock();
         double tempo_multiplicacao = (double)(fim_multiplicacao - inicio_multiplicacao) / CLOCKS_PER_SEC;
 

@@ -6,8 +6,8 @@ const tamanhos_array = [10_000_000, 20_000_000, 30_000_000, 40_000_000, 50_000_0
 
 global soma_dummy = 0
 
-# Função otimizada para redução paralela com divisão de blocos, @inbounds e @simd
-function soma_paralela_rapida(arr::Vector{Int})
+
+function somaParalela(arr::Vector{Int})
     num_threads = nthreads()
     somas_parciais = zeros(Int, num_threads)
     n = length(arr)
@@ -34,7 +34,7 @@ function executar_benchmark()
         soma_tempos = 0.0
         for iteracao in 1:NUM_ITERACOES
             tempo_inicio = time_ns()
-            s = soma_paralela_rapida(arr)
+            s = somaParalela(arr)
             tempo_fim = time_ns()
             tempo_decorrido = (tempo_fim - tempo_inicio) / 1e9  # converte nanosegundos para segundos
             soma_tempos += tempo_decorrido

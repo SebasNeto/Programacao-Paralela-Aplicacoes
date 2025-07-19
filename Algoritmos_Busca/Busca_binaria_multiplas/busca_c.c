@@ -1,4 +1,4 @@
-// busca_binaria_tradicional.c
+// buscaBinaria.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -12,8 +12,8 @@ int comparar(const void *a, const void *b) {
     return (*(int*)a - *(int*)b);
 }
 
-// Implementação da busca binária tradicional
-int busca_binaria(int arr[], int esquerda, int direita, int x) {
+//busca binária tradicional
+int buscaBinaria(int arr[], int esquerda, int direita, int x) {
     
     while (esquerda <= direita) {
         int meio = esquerda + (direita - esquerda) / 2;
@@ -50,7 +50,7 @@ int main() {
         
         clock_t inicio = clock();
         for (int i = 0; i < NUM_BUSCAS; i++) {
-            resultados[i] = busca_binaria(arr, 0, TAMANHO_ARRAY - 1, buscas[i]);
+            resultados[i] = buscaBinaria(arr, 0, TAMANHO_ARRAY - 1, buscas[i]);
         }
         clock_t fim = clock();
         

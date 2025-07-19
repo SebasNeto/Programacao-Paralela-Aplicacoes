@@ -22,28 +22,28 @@ int particionar(int vetor[], int baixo, int alto) {
     return i + 1;
 }
 
-void quicksort_openmp(int vetor[], int baixo, int alto) {
+void quicSortOpenmp(int vetor[], int baixo, int alto) {
     if (baixo < alto) {
         // Para subarrays pequenos, utiliza ordenação sequencial
         if (alto - baixo < THRESHOLD) {
             int pi = particionar(vetor, baixo, alto);
-            quicksort_openmp(vetor, baixo, pi - 1);
-            quicksort_openmp(vetor, pi + 1, alto);
+            quicSortOpenmp(vetor, baixo, pi - 1);
+            quicSortOpenmp(vetor, pi + 1, alto);
         } else {
             int pi = particionar(vetor, baixo, alto);
 
             #pragma omp task shared(vetor) if((pi - 1) - baixo > THRESHOLD)
-            quicksort_openmp(vetor, baixo, pi - 1);
+            quicSortOpenmp(vetor, baixo, pi - 1);
 
             #pragma omp task shared(vetor) if(alto - (pi + 1) > THRESHOLD)
-            quicksort_openmp(vetor, pi + 1, alto);
+            quicSortOpenmp(vetor, pi + 1, alto);
 
             #pragma omp taskwait
         }
     }
 }
 
-void preencher_vetor(int vetor[], int tamanho) {
+void preencherVetor(int vetor[], int tamanho) {
     for (int i = 0; i < tamanho; i++)
         vetor[i] = rand() % 100000;
 }
@@ -58,7 +58,7 @@ int main() {
     for (int i = 0; i < num_tamanhos; i++) {
         int tamanho = tamanhos[i];
         int *vetor = (int *)malloc(tamanho * sizeof(int));
-        preencher_vetor(vetor, tamanho);
+        preencherVetor(vetor, tamanho);
 
         double inicio = omp_get_wtime();
 
@@ -66,7 +66,7 @@ int main() {
         {
             #pragma omp single nowait
             {
-                quicksort_openmp(vetor, 0, tamanho - 1);
+                quicSortOpenmp(vetor, 0, tamanho - 1);
             }
         }
 

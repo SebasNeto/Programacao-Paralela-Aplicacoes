@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
-//correct 02
+
 
 #define MAX_THREADS 16   // Número máximo de threads
 #define MIN_SIZE    10000  // Tamanho mínimo do subarray para paralelizar
@@ -33,26 +33,26 @@ void mesclar(int vetor[], int esq, int meio, int dir, int *temp) {
         vetor[i] = temp[i];
 }
 
-void merge_sort_sequential(int vetor[], int esq, int dir, int *temp) {
+void mergeSorSeq(int vetor[], int esq, int dir, int *temp) {
     if (esq < dir) {
         int meio = esq + (dir - esq) / 2;
-        merge_sort_sequential(vetor, esq, meio, temp);
-        merge_sort_sequential(vetor, meio + 1, dir, temp);
+        mergeSorSeq(vetor, esq, meio, temp);
+        mergeSorSeq(vetor, meio + 1, dir, temp);
         mesclar(vetor, esq, meio, dir, temp);
     }
 }
 
-void *merge_sort_thread(void *arg) {
+void *mergeSorThread(void *arg) {
     ThreadArgs *args = (ThreadArgs *) arg;
-    merge_sort_sequential(args->vetor, args->esq, args->dir, args->temp);
+    mergeSorSeq(args->vetor, args->esq, args->dir, args->temp);
     free(args);
     return NULL;
 }
 
-// Merge Sort paralelo otimizado
-void merge_sort_parallel(int vetor[], int esq, int dir, int *temp) {
+
+void mergeSorParalelo(int vetor[], int esq, int dir, int *temp) {
     if ((dir - esq + 1) < MIN_SIZE) {
-        merge_sort_sequential(vetor, esq, dir, temp);
+        mergeSorSeq(vetor, esq, dir, temp);
         return;
     }
     
@@ -78,9 +78,9 @@ void merge_sort_parallel(int vetor[], int esq, int dir, int *temp) {
             args_esq->esq = esq;
             args_esq->dir = meio;
             args_esq->temp = temp;
-            pthread_create(&thread_esq, NULL, merge_sort_thread, (void *) args_esq);
+            pthread_create(&thread_esq, NULL, mergeSorThread, (void *) args_esq);
         } else {
-            merge_sort_parallel(vetor, esq, meio, temp);
+            mergeSorParalelo(vetor, esq, meio, temp);
         }
 
         if (use_thread_dir) {
@@ -89,9 +89,9 @@ void merge_sort_parallel(int vetor[], int esq, int dir, int *temp) {
             args_dir->esq = meio + 1;
             args_dir->dir = dir;
             args_dir->temp = temp;
-            pthread_create(&thread_dir, NULL, merge_sort_thread, (void *) args_dir);
+            pthread_create(&thread_dir, NULL, mergeSorThread, (void *) args_dir);
         } else {
-            merge_sort_parallel(vetor, meio + 1, dir, temp);
+            mergeSorParalelo(vetor, meio + 1, dir, temp);
         }
 
         if (use_thread_esq) {
@@ -112,11 +112,11 @@ void merge_sort_parallel(int vetor[], int esq, int dir, int *temp) {
     }
 }
 
-void merge_sort_start(int vetor[], int n, int *temp) {
-    merge_sort_parallel(vetor, 0, n - 1, temp);
+void startMerge(int vetor[], int n, int *temp) {
+    mergeSorParalelo(vetor, 0, n - 1, temp);
 }
 
-void preencher_vetor(int vetor[], int tamanho) {
+void preencherVetor(int vetor[], int tamanho) {
     for (int i = 0; i < tamanho; i++)
         vetor[i] = rand() % 100000;
 }
@@ -134,10 +134,10 @@ int main() {
         int *temp = (int *)malloc(tamanho * sizeof(int));
         if (!vetor || !temp) { perror("malloc"); exit(EXIT_FAILURE); }
         
-        preencher_vetor(vetor, tamanho);
+        preencherVetor(vetor, tamanho);
         
         clock_t inicio = clock();
-        merge_sort_start(vetor, tamanho, temp);
+        startMerge(vetor, tamanho, temp);
         clock_t fim = clock();
         
         double tempo_execucao = ((double)(fim - inicio)) / CLOCKS_PER_SEC;

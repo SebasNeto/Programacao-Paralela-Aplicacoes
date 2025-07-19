@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
-#include <unistd.h> // para sysconf
+#include <unistd.h> 
 
-#define NUM_ITERACOES 10  // Número de repetições para cada tamanho
+#define NUM_ITERACOES 10  
 
 // Estrutura para passar dados para cada thread
 typedef struct {
@@ -14,8 +14,8 @@ typedef struct {
     long long soma_parcial;
 } DadosThread;
 
-// Função que cada thread executará para calcular a soma parcial
-void *funcao_thread(void *arg) {
+
+void *funcaoThread(void *arg) {
     DadosThread *dados = (DadosThread*) arg;
     long long soma = 0;
     for (size_t i = dados->inicio; i < dados->fim; i++) {
@@ -25,15 +25,13 @@ void *funcao_thread(void *arg) {
     return NULL;
 }
 
-// Função para preencher o vetor com números aleatórios entre 0 e 9
-void gerar_vetor_aleatorio(int * restrict vetor, size_t n) {
+void numAleatorios(int * restrict vetor, size_t n) {
     for (size_t i = 0; i < n; i++) {
         vetor[i] = rand() % 10;
     }
 }
 
 int main() {
-    // Lista dos tamanhos de vetor para teste (de 10M a 100M elementos)
     size_t tamanhos[] = {10000000, 20000000, 30000000, 40000000, 50000000,
                          60000000, 70000000, 80000000, 90000000, 100000000};
     int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
@@ -44,7 +42,7 @@ int main() {
         num_threads = 1;
 
     double tempo_total = 0.0;
-    volatile long long soma_total_dummy = 0;  // Variável dummy para evitar otimização
+    volatile long long soma_total_dummy = 0; 
 
     srand((unsigned) time(NULL));
 
@@ -62,7 +60,7 @@ int main() {
             return EXIT_FAILURE;
         }
 
-        gerar_vetor_aleatorio(vetor, n);
+        numAleatorios(vetor, n);
         double tempo_medio = 0.0;
 
         // Executa NUM_ITERACOES iterações para cada tamanho
@@ -86,7 +84,7 @@ int main() {
                 dados_threads[i].fim = indice_inicio + bloco + extra;
                 dados_threads[i].soma_parcial = 0;
                 indice_inicio = dados_threads[i].fim;
-                if (pthread_create(&threads[i], NULL, funcao_thread, &dados_threads[i]) != 0) {
+                if (pthread_create(&threads[i], NULL, funcaoThread, &dados_threads[i]) != 0) {
                     fprintf(stderr, "Erro ao criar thread %d\n", i);
                     free(vetor);
                     return EXIT_FAILURE;

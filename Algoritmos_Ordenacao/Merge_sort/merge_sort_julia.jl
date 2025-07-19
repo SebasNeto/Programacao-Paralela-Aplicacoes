@@ -26,7 +26,7 @@ const LIMIAR_BASE = 10_000  # Limiar base para paralelismo
 end
 
 # Implementação otimizada do Merge Sort paralelo
-function merge_sort_paralelo!(A, B, inicio, fim, profundidade, max_profundidade, usar_A_para_B, limiar)
+function mergeParalelo(A, B, inicio, fim, profundidade, max_profundidade, usar_A_para_B, limiar)
     if fim - inicio + 1 ≤ limiar
         sort!(view(A, inicio:fim))  # Usa ordenação nativa para subarrays pequenos
         if !usar_A_para_B
@@ -38,12 +38,12 @@ function merge_sort_paralelo!(A, B, inicio, fim, profundidade, max_profundidade,
     meio = (inicio + fim) ÷ 2
 
     if profundidade < max_profundidade
-        tarefa_esquerda = @spawn merge_sort_paralelo!(A, B, inicio, meio, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
-        merge_sort_paralelo!(A, B, meio + 1, fim, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        tarefa_esquerda = @spawn mergeParalelo(A, B, inicio, meio, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        mergeParalelo(A, B, meio + 1, fim, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
         fetch(tarefa_esquerda)
     else
-        merge_sort_paralelo!(A, B, inicio, meio, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
-        merge_sort_paralelo!(A, B, meio + 1, fim, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        mergeParalelo(A, B, inicio, meio, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
+        mergeParalelo(A, B, meio + 1, fim, profundidade + 1, max_profundidade, !usar_A_para_B, limiar)
     end
 
     if usar_A_para_B
@@ -53,14 +53,14 @@ function merge_sort_paralelo!(A, B, inicio, fim, profundidade, max_profundidade,
     end
 end
 
-# Função principal que define um limiar de paralelismo adaptável
-function ordenacao_merge_paralelo!(A)
+
+function ordenamergeParalelo(A)
     max_threads = Threads.nthreads()
     max_profundidade = Int(log2(max_threads))  # Define a profundidade máxima com base no número de threads
     limiar_dinamico = max(LIMIAR_BASE, length(A) ÷ (2 * max_threads))  # Ajuste dinâmico do limiar
 
     B = similar(A)
-    merge_sort_paralelo!(A, B, 1, length(A), 0, max_profundidade, true, limiar_dinamico)
+    mergeParalelo(A, B, 1, length(A), 0, max_profundidade, true, limiar_dinamico)
     return A
 end
 
@@ -77,7 +77,7 @@ function executar_teste()
     for tamanho in tamanhos
         vetor = rand(1:100000, tamanho)
         inicio = time()
-        ordenado = ordenacao_merge_paralelo!(vetor)
+        ordenado = ordenamergeParalelo(vetor)
         tempo_execucao = round(time() - inicio, digits=4)
         push!(tempos, tempo_execucao)
         println("Tamanho: $tamanho - Tempo: $tempo_execucao segundos")

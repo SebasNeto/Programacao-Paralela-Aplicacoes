@@ -16,12 +16,12 @@ long long tamanhos_amostras[] = {
 
 // Estrutura para armazenar os dados passados para cada thread
 typedef struct {
-    long long amostras;  // Número de amostras que a thread deverá processar
-    unsigned int semente; // Semente para o gerador rand_r
-    long long contador;  // Contagem local dos pontos dentro do círculo
+    long long amostras;  
+    unsigned int semente; 
+    long long contador; 
 } dados_thread_t;
 
-void* monte_carlo_thread(void* arg) {
+void* monteCarlo(void* arg) {
     dados_thread_t *dados = (dados_thread_t*) arg;
     long long contador_local = 0;
     for (long long i = 0; i < dados->amostras; i++) {
@@ -60,10 +60,10 @@ int main(void) {
             // Cria as threads
             for (int t = 0; t < NUM_THREADS; t++) {
                 dados_threads[t].amostras = amostras_por_thread + (t < resto ? 1 : 0);
-                // Cria sementes diferentes para cada thread (exemplo: soma do ID com a semente global)
+                // Cria sementes diferentes para cada thread
                 dados_threads[t].semente = semente_global + t + iteracao;
                 dados_threads[t].contador = 0;
-                if (pthread_create(&threads[t], NULL, monte_carlo_thread, &dados_threads[t]) != 0) {
+                if (pthread_create(&threads[t], NULL, monteCarlo, &dados_threads[t]) != 0) {
                     perror("pthread_create");
                     exit(EXIT_FAILURE);
                 }

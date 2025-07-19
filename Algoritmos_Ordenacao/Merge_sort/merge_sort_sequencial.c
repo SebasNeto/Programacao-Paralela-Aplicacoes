@@ -26,16 +26,16 @@ void mesclar(int vetor[], int esq, int meio, int dir) {
     free(direita);
 }
 
-void merge_sort(int vetor[], int esq, int dir) {
+void mergeSort(int vetor[], int esq, int dir) {
     if (esq < dir) {
         int meio = esq + (dir - esq) / 2;
-        merge_sort(vetor, esq, meio);
-        merge_sort(vetor, meio + 1, dir);
+        mergeSort(vetor, esq, meio);
+        mergeSort(vetor, meio + 1, dir);
         mesclar(vetor, esq, meio, dir);
     }
 }
 
-void preencher_vetor(int vetor[], int tamanho) {
+void preencherVetor(int vetor[], int tamanho) {
     for (int i = 0; i < tamanho; i++)
         vetor[i] = rand() % 100000;
 }
@@ -50,10 +50,10 @@ int main() {
     for (int i = 0; i < num_tamanhos; i++) {
         int tamanho = tamanhos[i];
         int *vetor = (int *)malloc(tamanho * sizeof(int));
-        preencher_vetor(vetor, tamanho);
+        preencherVetor(vetor, tamanho);
 
         clock_t inicio = clock();
-        merge_sort(vetor, 0, tamanho - 1);
+        mergeSort(vetor, 0, tamanho - 1);
         clock_t fim = clock();
 
         double tempo_execucao = ((double)(fim - inicio)) / CLOCKS_PER_SEC;

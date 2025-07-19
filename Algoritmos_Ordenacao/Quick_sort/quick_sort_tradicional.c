@@ -29,7 +29,7 @@ void quicksort(int vetor[], int baixo, int alto) {
     }
 }
 
-void preencher_vetor(int vetor[], int tamanho) {
+void preencherVetor(int vetor[], int tamanho) {
     for (int i = 0; i < tamanho; i++)
         vetor[i] = rand() % 100000;
 }
@@ -44,7 +44,7 @@ int main() {
     for (int i = 0; i < num_tamanhos; i++) {
         int tamanho = tamanhos[i];
         int *vetor = (int *)malloc(tamanho * sizeof(int));
-        preencher_vetor(vetor, tamanho);
+        preencherVetor(vetor, tamanho);
 
         clock_t inicio = clock();
         quicksort(vetor, 0, tamanho - 1);

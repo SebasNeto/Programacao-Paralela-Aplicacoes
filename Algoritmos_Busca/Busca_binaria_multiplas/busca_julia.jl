@@ -4,9 +4,9 @@ const tamanhos = [
     1_000_000, 5_000_000, 10_000_000, 25_000_000, 50_000_000,
     75_000_000, 100_000_000, 250_000_000, 500_000_000
 ]
-const NUM_BUSCAS = 1000
+const NUM_BUSCAS = 100000
 
-@inline function busca_binaria(arr::Vector{Int}, x::Int)
+@inline function buscaBinaria(arr::Vector{Int}, x::Int)
     esquerda = 1
     direita = length(arr)
     while esquerda <= direita
@@ -25,7 +25,7 @@ const NUM_BUSCAS = 1000
     return -1
 end
 
-function busca_paralela(arr::Vector{Int}, buscas::Vector{Int})
+function parallelBusca(arr::Vector{Int}, buscas::Vector{Int})
     resultados = Vector{Int}(undef, length(buscas))
     n = length(buscas)
     chunk = cld(n, Threads.nthreads())
@@ -33,7 +33,7 @@ function busca_paralela(arr::Vector{Int}, buscas::Vector{Int})
         inicio = (t - 1) * chunk + 1
         fim = min(t * chunk, n)
         for i in inicio:fim
-            resultados[i] = busca_binaria(arr, buscas[i])
+            resultados[i] = buscaBinaria(arr, buscas[i])
         end
     end
     return resultados
@@ -46,7 +46,7 @@ function executar_testes()
         arr = collect(1:2:(2 * tamanho))
         buscas = rand(1:2 * tamanho, NUM_BUSCAS)
         
-        tempo_paralelo = @elapsed busca_paralela(arr, buscas)
+        tempo_paralelo = @elapsed parallelBusca(arr, buscas)
         push!(tempos, tempo_paralelo)
         println("Tamanho: $tamanho - Tempo da busca binária paralela: $tempo_paralelo segundos")
     end

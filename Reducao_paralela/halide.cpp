@@ -48,7 +48,7 @@ int main() {
 
             // Operação de redução (soma)
             Func reducao;
-            reducao() = sum(cast<int64_t>(input(r)));  // Usar int64_t para evitar overflow
+            reducao() = sum(cast<int64_t>(input(r)));  // Usa int64_t para evitar overflow
 
             // Agendamento otimizado
             reducao.compute_root();

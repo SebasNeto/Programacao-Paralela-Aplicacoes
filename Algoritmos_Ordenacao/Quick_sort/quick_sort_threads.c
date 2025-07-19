@@ -36,7 +36,7 @@ int median_of_three(int *array, int low, int high) {
     return array[high - 1];
 }
 
-// Função de partição utilizando median-of-three quando possível
+// Função de partição 
 int partition(int *array, int low, int high) {
     // Se o subarray for muito pequeno, utiliza o último elemento como pivô
     if (high - low < 3) {
@@ -68,23 +68,23 @@ int partition(int *array, int low, int high) {
 }
 
 // Quicksort sequencial com eliminação de recursão de cauda
-void quicksort_sequential(int *array, int low, int high) {
+void quickSortSeq(int *array, int low, int high) {
     while (low < high) {
         // Se o subarray for pequeno, processa de forma sequencial
         if (high - low < MIN_SIZE) {
             int pi = partition(array, low, high);
-            quicksort_sequential(array, low, pi - 1);
+            quickSortSeq(array, low, pi - 1);
             low = pi + 1;
         } else {
             int pi = partition(array, low, high);
-            quicksort_sequential(array, low, pi - 1);
+            quickSortSeq(array, low, pi - 1);
             low = pi + 1;
         }
     }
 }
 
 // Função executada pelas threads: utiliza paralelismo com spawn único
-void *quicksort_thread(void *arg) {
+void *quickSortThread(void *arg) {
     ThreadArgs *args = (ThreadArgs *)arg;
     int low = args->low;
     int high = args->high;
@@ -94,7 +94,7 @@ void *quicksort_thread(void *arg) {
     while (low < high) {
         // Se o subarray for pequeno, utiliza o quicksort sequencial
         if (high - low < MIN_SIZE) {
-            quicksort_sequential(array, low, high);
+            quickSortSeq(array, low, high);
             break;
         }
         
@@ -116,7 +116,7 @@ void *quicksort_thread(void *arg) {
             new_args->low = low;
             new_args->high = pi - 1;
             pthread_t thread;
-            pthread_create(&thread, NULL, quicksort_thread, new_args);
+            pthread_create(&thread, NULL, quickSortThread, new_args);
             
             // Processa a partição direita na thread atual (eliminação de recursão de cauda)
             low = pi + 1;
@@ -128,7 +128,7 @@ void *quicksort_thread(void *arg) {
             pthread_mutex_unlock(&thread_count_mutex);
         } else {
             // Se não for possível criar nova thread, processa a partição esquerda sequencialmente
-            quicksort_sequential(array, low, pi - 1);
+            quickSortSeq(array, low, pi - 1);
             low = pi + 1;
         }
     }
@@ -161,7 +161,7 @@ int main() {
 
         clock_t start = clock();
         pthread_t initial_thread;
-        pthread_create(&initial_thread, NULL, quicksort_thread, args);
+        pthread_create(&initial_thread, NULL, quickSortThread, args);
         pthread_join(initial_thread, NULL);
         clock_t end = clock();
 

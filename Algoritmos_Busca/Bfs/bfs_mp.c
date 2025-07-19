@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #define GRAU_MEDIO 10
-// Lista de tamanhos de vértices para teste (ajuste conforme necessário)
+
 long tamanhos[] = {1000000, 2000000, 3000000, 4000000, 5000000, 6000000, 700000, 8000000, 9000000};
 int num_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
 
@@ -23,7 +23,7 @@ typedef struct {
 } Grafo;
 
 // Função para adicionar aresta (grafo não direcionado)
-void adicionar_aresta(Grafo *grafo, long u, long v) {
+void adicionarAresta(Grafo *grafo, long u, long v) {
     No *no = &grafo->nos[u];
     if (no->num_vizinhos == no->capacidade) {
         no->capacidade = (no->capacidade == 0) ? 4 : no->capacidade * 2;
@@ -37,7 +37,7 @@ void adicionar_aresta(Grafo *grafo, long u, long v) {
 }
 
 // Cria um grafo aleatório conectado com num_vertices e grau médio grau_medio
-Grafo *criar_grafo(long num_vertices, int grau_medio) {
+Grafo *criarGrafo(long num_vertices, int grau_medio) {
     Grafo *grafo = malloc(sizeof(Grafo));
     grafo->num_vertices = num_vertices;
     grafo->nos = malloc(num_vertices * sizeof(No));
@@ -53,8 +53,8 @@ Grafo *criar_grafo(long num_vertices, int grau_medio) {
     // Cria uma árvore geradora para garantir conectividade
     for (long i = 1; i < num_vertices; i++) {
         long pai = rand() % i;
-        adicionar_aresta(grafo, i, pai);
-        adicionar_aresta(grafo, pai, i);
+        adicionarAresta(grafo, i, pai);
+        adicionarAresta(grafo, pai, i);
     }
     // Adiciona arestas extras para atingir o grau médio desejado
     long total_arestas = (grau_medio * num_vertices) / 2;
@@ -63,13 +63,13 @@ Grafo *criar_grafo(long num_vertices, int grau_medio) {
         long u = rand() % num_vertices;
         long v = rand() % num_vertices;
         if (u == v) { i--; continue; }
-        adicionar_aresta(grafo, u, v);
-        adicionar_aresta(grafo, v, u);
+        adicionarAresta(grafo, u, v);
+        adicionarAresta(grafo, v, u);
     }
     return grafo;
 }
 
-void liberar_grafo(Grafo *grafo) {
+void liberarGrafo(Grafo *grafo) {
     for (long i = 0; i < grafo->num_vertices; i++) {
         free(grafo->nos[i].vizinhos);
     }
@@ -77,8 +77,8 @@ void liberar_grafo(Grafo *grafo) {
     free(grafo);
 }
 
-// Implementação da BFS utilizando OpenMP
-void bfs_openmp(Grafo *grafo, int inicio, int *distancia) {
+//BFS utilizando OpenMP
+void openmpBfs(Grafo *grafo, int inicio, int *distancia) {
     long n = grafo->num_vertices;
     // Inicializa as distâncias como -1 (não visitado)
     for (long i = 0; i < n; i++)
@@ -125,7 +125,6 @@ void bfs_openmp(Grafo *grafo, int inicio, int *distancia) {
     free(proxima_fronteira);
 }
 
-// Função para calcular a diferença de tempo (em segundos)
 double diferenca_tempo(struct timespec inicio, struct timespec fim) {
     return (fim.tv_sec - inicio.tv_sec) + (fim.tv_nsec - inicio.tv_nsec) / 1e9;
 }
@@ -137,7 +136,7 @@ int main() {
     for (int s = 0; s < num_tamanhos; s++) {
         long num_vertices = tamanhos[s];
         printf("Tamanho do grafo: %ld vértices\n", num_vertices);
-        Grafo *grafo = criar_grafo(num_vertices, GRAU_MEDIO);
+        Grafo *grafo = criarGrafo(num_vertices, GRAU_MEDIO);
         int *distancia = malloc(num_vertices * sizeof(int));
         if (!distancia) {
             perror("Erro ao alocar vetor de distância");
@@ -146,7 +145,7 @@ int main() {
         
         struct timespec tempo_inicio, tempo_fim;
         clock_gettime(CLOCK_MONOTONIC, &tempo_inicio);
-        bfs_openmp(grafo, 0, distancia);
+        openmpBfs(grafo, 0, distancia);
         clock_gettime(CLOCK_MONOTONIC, &tempo_fim);
         
         double tempo = diferenca_tempo(tempo_inicio, tempo_fim);
@@ -154,7 +153,7 @@ int main() {
         printf("  Tempo: %f segundos\n\n", tempo);
         
         free(distancia);
-        liberar_grafo(grafo);
+        liberarGrafo(grafo);
     }
     
     double media_geral = soma_tempos / num_tamanhos;

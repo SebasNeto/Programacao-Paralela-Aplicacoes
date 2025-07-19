@@ -4,10 +4,10 @@
 #include <time.h>
 #include <unistd.h>
 
-#define NUM_BUSCAS 1000
+#define NUM_BUSCAS 100000
 
-// Função de busca binária (array de inteiros ordenados)
-int busca_binaria(const int *arr, int n, int x) {
+// Função de busca binária
+int buscaBinaria(const int *arr, int n, int x) {
     int esquerda = 0, direita = n - 1;
     while (esquerda <= direita) {
         int meio = (esquerda + direita) >> 1;  // divisão por 2 usando deslocamento de bits
@@ -31,10 +31,10 @@ typedef struct {
 } dados_thread;
 
 // Função executada por cada thread
-void *funcao_thread(void *arg) {
+void *funcaoThread(void *arg) {
     dados_thread *dados = (dados_thread *) arg;
     for (int i = dados->inicio; i < dados->fim; i++) {
-        dados->resultados[i] = busca_binaria(dados->arr, dados->n, dados->buscas[i]);
+        dados->resultados[i] = buscaBinaria(dados->arr, dados->n, dados->buscas[i]);
     }
     return NULL;
 }
@@ -104,7 +104,7 @@ int main() {
             dados_threads[t].fim = (t + 1) * tamanho_pedaco;
             if (dados_threads[t].fim > NUM_BUSCAS)
                 dados_threads[t].fim = NUM_BUSCAS;
-            pthread_create(&threads[t], NULL, funcao_thread, &dados_threads[t]);
+            pthread_create(&threads[t], NULL, funcaoThread, &dados_threads[t]);
         }
 
         // Aguarda todas as threads finalizarem

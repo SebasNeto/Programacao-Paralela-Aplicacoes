@@ -21,7 +21,7 @@ typedef struct {
     No *nos;
 } Grafo;
 
-void adicionar_aresta(Grafo *grafo, long u, long v) {
+void adicionarAresta(Grafo *grafo, long u, long v) {
     No *no = &grafo->nos[u];
     if (no->num_vizinhos == no->capacidade) {
         no->capacidade = (no->capacidade == 0) ? 4 : no->capacidade * 2;
@@ -34,24 +34,24 @@ void adicionar_aresta(Grafo *grafo, long u, long v) {
     no->vizinhos[no->num_vizinhos++] = v;
 }
 
-void *criar_arestas_thread(void *arg) {
+void *criarArestas(void *arg) {
     Grafo *grafo = (Grafo *)arg;
     long num_vertices = grafo->num_vertices;
     for (long i = 1; i < num_vertices; i++) {
         long pai = rand() % i;
-        adicionar_aresta(grafo, i, pai);
-        adicionar_aresta(grafo, pai, i);
+        adicionarAresta(grafo, i, pai);
+        adicionarAresta(grafo, pai, i);
     }
     return NULL;
 }
 
-Grafo *criar_grafo(long num_vertices, int grau_medio) {
+Grafo *criarGrafo(long num_vertices, int grau_medio) {
     Grafo *grafo = malloc(sizeof(Grafo));
     grafo->num_vertices = num_vertices;
     grafo->nos = calloc(num_vertices, sizeof(No));
 
     pthread_t thread_criacao;
-    pthread_create(&thread_criacao, NULL, criar_arestas_thread, grafo);
+    pthread_create(&thread_criacao, NULL, criarArestas, grafo);
     pthread_join(thread_criacao, NULL);
 
     long total_arestas = (grau_medio * num_vertices) / 2;
@@ -60,14 +60,14 @@ Grafo *criar_grafo(long num_vertices, int grau_medio) {
         long u = rand() % num_vertices;
         long v = rand() % num_vertices;
         if (u != v) {
-            adicionar_aresta(grafo, u, v);
-            adicionar_aresta(grafo, v, u);
+            adicionarAresta(grafo, u, v);
+            adicionarAresta(grafo, v, u);
         }
     }
     return grafo;
 }
 
-void liberar_grafo(Grafo *grafo) {
+void liberarGrafo(Grafo *grafo) {
     for (long i = 0; i < grafo->num_vertices; i++) {
         free(grafo->nos[i].vizinhos);
     }
@@ -85,7 +85,7 @@ atomic_int nivel_global;
 int num_threads;
 pthread_barrier_t barreira;
 
-void *bfs_thread(void *arg) {
+void *threadBfs(void *arg) {
     int id = *(int *)arg;
     while (atomic_load(&tamanho_fronteira_global) > 0) {
         for (int i = id; i < atomic_load(&tamanho_fronteira_global); i += num_threads) {
@@ -121,7 +121,7 @@ double diferenca_tempo(struct timespec inicio, struct timespec fim) {
     return (fim.tv_sec - inicio.tv_sec) + (fim.tv_nsec - inicio.tv_nsec) / 1e9;
 }
 
-void bfs_paralelo(Grafo *grafo, int inicio) {
+void paraleloBfs(Grafo *grafo, int inicio) {
     long n = grafo->num_vertices;
     for (long i = 0; i < n; i++) distancia_global[i] = -1;
     distancia_global[inicio] = 0;
@@ -136,7 +136,7 @@ void bfs_paralelo(Grafo *grafo, int inicio) {
 
     for (int t = 0; t < num_threads; t++) {
         ids_threads[t] = t;
-        pthread_create(&threads[t], NULL, bfs_thread, &ids_threads[t]);
+        pthread_create(&threads[t], NULL, threadBfs, &ids_threads[t]);
     }
     for (int t = 0; t < num_threads; t++) {
         pthread_join(threads[t], NULL);
@@ -158,7 +158,7 @@ int main() {
         long num_vertices = tamanhos[s];
         printf("Tamanho do grafo: %ld vértices\n", num_vertices);
 
-        Grafo *grafo = criar_grafo(num_vertices, GRAU_MEDIO);
+        Grafo *grafo = criarGrafo(num_vertices, GRAU_MEDIO);
         grafo_global = grafo;
 
         distancia_global = malloc(num_vertices * sizeof(int));
@@ -167,7 +167,7 @@ int main() {
 
         struct timespec tempo_inicio, tempo_fim;
         clock_gettime(CLOCK_MONOTONIC, &tempo_inicio);
-        bfs_paralelo(grafo, 0);
+        paraleloBfs(grafo, 0);
         clock_gettime(CLOCK_MONOTONIC, &tempo_fim);
 
         double tempo = diferenca_tempo(tempo_inicio, tempo_fim);
@@ -177,7 +177,7 @@ int main() {
         free(distancia_global);
         free(fronteira_global);
         free(proxima_fronteira_global);
-        liberar_grafo(grafo);
+        liberarGrafo(grafo);
     }
 
     pthread_barrier_destroy(&barreira);
