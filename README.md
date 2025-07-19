@@ -23,7 +23,9 @@ https://learn.microsoft.com/pt-br/cpp/cpp/?view=msvc-170
 As linguagens utilizadas para testar as versões tradicionais foram Python e C:
 
 https://www.python.org/
+
 https://visualstudio.microsoft.com
+
 https://embarcados.com.br/linguagem-c-guia-completo/
 
 
